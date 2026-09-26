@@ -1,0 +1,78 @@
+.top-types-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 20px 0;
+  padding-bottom: 12px;
+
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.top-type-card {
+  border-radius: 40px;
+  padding: 2px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.top-type-emoji {
+  font-size: 24px;
+}
+
+.top-type-name {
+  margin: 0;
+  font-size: 14px;
+  color: #111;
+  line-height: 24px;
+  white-space: nowrap;
+  width: auto;
+}
+
+.top-type-count {
+  margin: 0;
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 500;
+  font-size: 19px;
+  line-height: 25px;
+  color: #000000;
+}
+
+.top-type-card.roads {
+  background: #e4edd6;
+}
+
+.top-type-card.lighting {
+  background: #f9f6d7;
+}
+
+.top-type-card.garbage {
+  background: #e0e8f0;
+}
+
+.top-type-card.transport {
+  background: #ffe2d1;
+}
+
+.top-type-card.parks {
+  background: #e9fad7;
+}
+
+.top-type-card.buildings {
+  background: #e9e8e8;
+}
+
+.top-type-card.other {
+  background: #f6e1e1;
+}
+
+.top-type-card {
+  transition: transform 0.2s ease;
+}
