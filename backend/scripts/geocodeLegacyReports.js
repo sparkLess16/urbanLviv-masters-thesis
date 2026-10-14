@@ -56,7 +56,7 @@ const geocode = async (query) => {
 const buildQueries = (report) => {
   const district = DISTRICT_NAMES[report.district_id];
   const fragments = report.location
-    .split(/,|near/i)
+    .split(/,|\bnear\b/i)
     .map((part) => part.trim())
     .filter(Boolean);
 
@@ -120,7 +120,9 @@ const run = async () => {
 
   console.log(`\nDone: ${updated} geocoded, ${failed.length} failed.`);
   if (failed.length > 0) {
-    console.log("Failed reports need coordinates set manually (edit the report).");
+    console.log(
+      "Failed reports need coordinates set manually (edit the report).",
+    );
   }
 
   await mongoose.disconnect();
