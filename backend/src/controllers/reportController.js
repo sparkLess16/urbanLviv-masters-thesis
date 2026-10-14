@@ -3,6 +3,7 @@ import cloudinary from "../config/cloudinary.js";
 import Reaction from "../models/Reaction.js";
 import Comment from "../models/Comment.js";
 import { analyzeReportWithAI } from "../services/geminiService.js";
+import { buildGeoPoint, geoToLatLng } from "../utils/geo.js";
 
 export const createReport = async (req, res) => {
   try {
@@ -13,7 +14,8 @@ export const createReport = async (req, res) => {
       district_id,
       type_id,
       priority_id,
-      attachment_urls,
+      lat,
+      lng,
     } = req.body;
 
     if (
@@ -27,6 +29,11 @@ export const createReport = async (req, res) => {
       return res.status(400).json({
         message: "Please fill in all required fields",
       });
+    }
+
+    const { geo, error: geoError } = buildGeoPoint(lat, lng);
+    if (geoError) {
+      return res.status(400).json({ message: geoError });
     }
 
     const uploadedPhotos = [];
@@ -47,6 +54,7 @@ export const createReport = async (req, res) => {
       description,
       location,
       district_id,
+      geo,
       type_id,
       priority_id,
       attachment_urls: uploadedPhotos,
@@ -225,6 +233,7 @@ export const getReports = async (req, res) => {
           title: report.title,
           description: report.description,
           location: report.location,
+          coordinates: geoToLatLng(report.geo),
 
           district_id: report.district_id,
           district_name: getDistrictName(report.district_id),
@@ -296,6 +305,7 @@ export const getReportById = async (req, res) => {
       title: report.title,
       description: report.description,
       location: report.location,
+      coordinates: geoToLatLng(report.geo),
       district_id: report.district_id,
       district_name: getDistrictName(report.district_id),
 
@@ -390,14 +400,45 @@ export const updateReport = async (req, res) => {
       return res.status(404).json({ message: "Report not found" });
     }
 
-    if (report.created_by.toString() !== req.user._id.toString()) {
+    const isOwner = report.created_by.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
       return res
         .status(403)
         .json({ message: "Not allowed to edit this report" });
     }
 
-    const { title, description, location, district_id, priority_id, type_id } =
-      req.body;
+    const {
+      title,
+      description,
+      location,
+      district_id,
+      priority_id,
+      type_id,
+      lat,
+      lng,
+    } = req.body;
+
+    // Coordinates are optional on update; if sent, they must be valid.
+    if (lat !== undefined || lng !== undefined) {
+      const { geo, error: geoError } = buildGeoPoint(lat, lng);
+      if (geoError) {
+        return res.status(400).json({ message: geoError });
+      }
+      report.geo = geo;
+    }
+
+    // An admin who is not the author may only correct the coordinates;
+    // other fields and the AI analysis stay untouched.
+    if (!isOwner) {
+      report.modified_by = req.user._id;
+      const savedReport = await report.save();
+      return res.json({
+        message: "Report location updated successfully",
+        report: savedReport,
+      });
+    }
 
     report.title = title || report.title;
     report.description = description || report.description;

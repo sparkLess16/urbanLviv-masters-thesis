@@ -3,6 +3,7 @@ import axios from "axios";
 import "../styles/ReportForm.css";
 import "../styles/EditModal.css";
 import ConfirmDialog from "./ConfirmDialog";
+import LocationPicker from "./LocationPicker";
 
 const EditModal = ({
   isOpen,
@@ -26,6 +27,9 @@ const EditModal = ({
   const [editedDistrict, setEditedDistrict] = useState(
     reportData?.district_id || "",
   );
+  const [editedCoordinates, setEditedCoordinates] = useState(
+    reportData?.coordinates || null,
+  );
   const [districts, setDistricts] = useState([]);
   const [editedPriority, setEditedPriority] = useState(
     reportData?.priority_id || "",
@@ -43,6 +47,7 @@ const EditModal = ({
       setEditedDescription(reportData.description);
       setEditedPlace(reportData.location);
       setEditedDistrict(reportData.district_id);
+      setEditedCoordinates(reportData.coordinates || null);
       setEditedPriority(reportData.priority_id);
       setEditedType(reportData.type_id);
     }
@@ -89,6 +94,7 @@ const EditModal = ({
     if (!editedDescription.trim()) newErrors.description = "Required";
     if (!editedPlace.trim()) newErrors.location = "Required";
     if (!editedDistrict) newErrors.district = "Required";
+    if (!editedCoordinates) newErrors.coordinates = "Select the place on the map";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -102,6 +108,8 @@ const EditModal = ({
         description: editedDescription.trim(),
         location: editedPlace.trim(),
         district_id: editedDistrict,
+        lat: editedCoordinates.lat,
+        lng: editedCoordinates.lng,
         priority_id: editedPriority,
         type_id: editedType,
       };
@@ -265,6 +273,17 @@ const EditModal = ({
                 <span className="input-error">{errors.district}</span>
               )}
             </div>
+          </div>
+
+          <div className="input-group full-width">
+            <label>Place on the map</label>
+            <LocationPicker
+              value={editedCoordinates}
+              onChange={setEditedCoordinates}
+            />
+            {errors.coordinates && (
+              <span className="input-error">{errors.coordinates}</span>
+            )}
           </div>
 
           <button onClick={submitReport} disabled={isSubmitting}>
