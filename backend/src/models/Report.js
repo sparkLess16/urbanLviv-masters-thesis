@@ -25,6 +25,19 @@ const reportSchema = new mongoose.Schema(
       required: true,
     },
 
+    // GeoJSON Point, coordinates are [lng, lat]. Optional: legacy reports
+    // created before geo support have no value until geocoded by a script.
+    geo: {
+      type: {
+        type: String,
+        enum: ["Point"],
+      },
+      coordinates: {
+        type: [Number],
+        default: undefined,
+      },
+    },
+
     type_id: {
       type: String,
       enum: [
@@ -108,5 +121,7 @@ const reportSchema = new mongoose.Schema(
     },
   },
 );
+
+reportSchema.index({ geo: "2dsphere" });
 
 export default mongoose.model("Report", reportSchema);
