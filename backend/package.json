@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/",
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "geocode:legacy": "node scripts/geocodeLegacyReports.js",
+    "sync:districts": "node scripts/syncDistrictsWithGeo.js"
   },
   "keywords": [],
   "author": "",
