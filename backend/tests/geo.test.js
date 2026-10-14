@@ -28,10 +28,13 @@ test("rejects points outside of Lviv", () => {
 });
 
 test("geoToLatLng flattens a stored point and tolerates missing geo", () => {
-  assert.deepEqual(geoToLatLng({ type: "Point", coordinates: [24.03, 49.84] }), {
-    lat: 49.84,
-    lng: 24.03,
-  });
+  assert.deepEqual(
+    geoToLatLng({ type: "Point", coordinates: [24.03, 49.84] }),
+    {
+      lat: 49.84,
+      lng: 24.03,
+    },
+  );
   assert.equal(geoToLatLng(undefined), null);
   assert.equal(geoToLatLng({ coordinates: [] }), null);
 });
