@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import "../styles/ReportForm.css";
 import ConfirmDialog from "./ConfirmDialog";
+import LocationPicker from "./LocationPicker";
 
 const ReportForm = ({ onSubmitted }) => {
   const [title, setTitle] = useState("");
@@ -9,6 +10,7 @@ const ReportForm = ({ onSubmitted }) => {
   const [typeId, setTypeId] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [coordinates, setCoordinates] = useState(null);
   const [districtId, setDistrictId] = useState("");
   const [districts, setDistricts] = useState([]);
   const [photoInputs, setPhotoInputs] = useState([0]);
@@ -102,6 +104,7 @@ const ReportForm = ({ onSubmitted }) => {
     if (!description.trim()) newErrors.description = "Required";
     if (!location.trim()) newErrors.location = "Required";
     if (!districtId) newErrors.district = "Required";
+    if (!coordinates) newErrors.coordinates = "Select the place on the map";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -118,6 +121,8 @@ const ReportForm = ({ onSubmitted }) => {
       formData.append("description", description.trim());
       formData.append("location", location.trim());
       formData.append("district_id", districtId);
+      formData.append("lat", coordinates.lat);
+      formData.append("lng", coordinates.lng);
       formData.append("priority_id", priorityId);
       formData.append("type_id", typeId);
 
@@ -141,6 +146,7 @@ const ReportForm = ({ onSubmitted }) => {
       setTypeId("");
       setDescription("");
       setLocation("");
+      setCoordinates(null);
       setDistrictId("");
       setPreviews({});
       setAttachments({});
@@ -287,6 +293,14 @@ const ReportForm = ({ onSubmitted }) => {
             <span className="input-error">{errors.district}</span>
           )}
         </div>
+      </div>
+
+      <div className="input-group full-width">
+        <label>Place on the map</label>
+        <LocationPicker value={coordinates} onChange={setCoordinates} />
+        {errors.coordinates && (
+          <span className="input-error">{errors.coordinates}</span>
+        )}
       </div>
 
       <div className="input-group full-width">

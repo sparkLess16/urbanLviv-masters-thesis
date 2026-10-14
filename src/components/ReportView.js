@@ -5,6 +5,7 @@ import EditModal from "./EditModal";
 import "../styles/ReportView.css";
 import "../styles/Report.css";
 import ConfirmDialog from "./ConfirmDialog";
+import LocationPicker from "./LocationPicker";
 
 const ReportView = () => {
   const { reportId } = useParams();
@@ -148,6 +149,7 @@ const ReportView = () => {
     description,
     location,
     district_name,
+    coordinates,
     created_by,
   } = reportData;
 
@@ -347,11 +349,16 @@ const ReportView = () => {
             />
           </svg>
         </button>
-        {isReportCreator && isReportEditable && (
+        {((isReportCreator && isReportEditable) || isAdmin) && (
           <div className="actions-right">
-            <button className="cancel-btn" onClick={() => setShowConfirm(true)}>
-              Delete
-            </button>
+            {isReportCreator && isReportEditable && (
+              <button
+                className="cancel-btn"
+                onClick={() => setShowConfirm(true)}
+              >
+                Delete
+              </button>
+            )}
             {showConfirm && (
               <ConfirmDialog
                 message={[
@@ -465,6 +472,8 @@ const ReportView = () => {
             <p className="report-location">📍 {location}</p>
           </div>
         </div>
+
+        {coordinates && <LocationPicker value={coordinates} readOnly />}
 
         <div className="reaction-buttons">
           <button
