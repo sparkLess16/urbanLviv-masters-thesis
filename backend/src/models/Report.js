@@ -113,11 +113,32 @@ const reportSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    // Normalized semantic vector. Hidden from queries and JSON output so the
+    // 768 numbers never reach API responses; load with .select("+embedding").
+    embedding: {
+      type: [Number],
+      select: false,
+      default: undefined,
+    },
+
+    embedding_model: {
+      type: String,
+      select: false,
+      default: undefined,
+    },
   },
   {
     timestamps: {
       createdAt: "created_dt",
       updatedAt: "modified_dt",
+    },
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.embedding;
+        delete ret.embedding_model;
+        return ret;
+      },
     },
   },
 );
