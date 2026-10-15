@@ -3,6 +3,7 @@ import cloudinary from "../config/cloudinary.js";
 import Reaction from "../models/Reaction.js";
 import Comment from "../models/Comment.js";
 import { analyzeReportWithAI } from "../services/geminiService.js";
+import { embedReport } from "../services/embeddingService.js";
 import { buildGeoPoint, geoToLatLng } from "../utils/geo.js";
 
 export const createReport = async (req, res) => {
@@ -49,6 +50,9 @@ export const createReport = async (req, res) => {
       }
     }
 
+    // Null when Gemini is down: the report is still saved, backfill adds the vector.
+    const embeddingFields = await embedReport({ title, description });
+
     const report = await Report.create({
       title,
       description,
@@ -57,6 +61,7 @@ export const createReport = async (req, res) => {
       geo,
       type_id,
       priority_id,
+      ...embeddingFields,
       attachment_urls: uploadedPhotos,
       created_by: req.user._id,
       modified_by: req.user._id,
@@ -440,8 +445,22 @@ export const updateReport = async (req, res) => {
       });
     }
 
+    const textChanged =
+      (title && title !== report.title) ||
+      (description && description !== report.description);
+
     report.title = title || report.title;
     report.description = description || report.description;
+
+    if (textChanged) {
+      const embeddingFields = await embedReport(report);
+      // On failure drop the stale vector so backfill recomputes it.
+      Object.assign(
+        report,
+        embeddingFields ?? { embedding: undefined, embedding_model: undefined },
+      );
+    }
+
     report.location = location || report.location;
     report.district_id = district_id || report.district_id;
     report.priority_id = priority_id || report.priority_id;
