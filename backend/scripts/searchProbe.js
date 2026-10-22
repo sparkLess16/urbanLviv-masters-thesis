@@ -12,7 +12,15 @@ import { embedText } from "../src/services/embeddingService.js";
 
 dotenv.config();
 
-const phrase = process.argv.slice(2).join(" ").trim();
+// With --experiment the search runs in the experiment database.
+const EXPERIMENT = process.argv.includes("--experiment");
+const DB_NAME = process.env.EXPERIMENT_DB_NAME || "urbanlviv_experiments";
+
+const phrase = process.argv
+  .slice(2)
+  .filter((arg) => arg !== "--experiment")
+  .join(" ")
+  .trim();
 const LIMIT = 5;
 
 const run = async () => {
@@ -21,7 +29,11 @@ const run = async () => {
     return;
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(
+    process.env.MONGO_URI,
+    EXPERIMENT ? { dbName: DB_NAME } : {},
+  );
+  console.log(`Database: ${mongoose.connection.name}`);
   const queryVector = await embedText(phrase, "query");
 
   const results = await Report.aggregate([

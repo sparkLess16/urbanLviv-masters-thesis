@@ -15,6 +15,10 @@ import {
   getTopReports,
   retryReportAI,
 } from "../controllers/reportController.js";
+import {
+  getRelatedReports,
+  searchReports,
+} from "../controllers/similarController.js";
 
 const router = express.Router();
 
@@ -25,6 +29,8 @@ router.get("/statuses", getStatuses);
 router.get("/districts", getDistricts);
 router.get("/top-types", getTopTypes);
 router.get("/top", protect, getTopReports);
+router.get("/search", protect, searchReports);
+router.get("/:id/related", protect, getRelatedReports);
 router.post("/:id/retry-ai", protect, retryReportAI);
 router.get("/", protect, getReports);
 router.get("/:id", protect, getReportById);
