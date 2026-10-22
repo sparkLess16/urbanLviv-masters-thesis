@@ -91,12 +91,17 @@ const Tabs = ({ shouldRefresh, onRefreshed }) => {
     };
   }, []);
 
+  const supportedReports = allReports.filter(
+    (report) => report.supported_by_me,
+  );
   const currentReports =
     activeTab === "all"
       ? allReports
       : activeTab === "yours"
         ? userReports
-        : topReports;
+        : activeTab === "supported"
+          ? supportedReports
+          : topReports;
   const filteredReports = currentReports.filter((report) =>
     report.title?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
@@ -127,6 +132,13 @@ const Tabs = ({ shouldRefresh, onRefreshed }) => {
             onClick={() => setActiveTab("yours")}
           >
             Yours <span className="count">{counts.user_reports}</span>
+          </button>
+
+          <button
+            className={`tab ${activeTab === "supported" ? "active" : ""}`}
+            onClick={() => setActiveTab("supported")}
+          >
+            Supported <span className="count">{supportedReports.length}</span>
           </button>
         </div>
 
@@ -167,8 +179,23 @@ const Tabs = ({ shouldRefresh, onRefreshed }) => {
         </div>
       </div>
       <div className="tab-content">
+        {activeTab === "supported" && (
+          <p className="tab-note">
+            {supportedReports.length > 0
+              ? "Reports you support. You are notified when their status changes."
+              : "You do not support any reports yet."}
+          </p>
+        )}
         {filteredReports.map((r) => (
-          <Report key={r.reportId || r._id} data={r} />
+          <Report
+            key={r.reportId || r._id}
+            data={r}
+            showStopSupporting={activeTab === "supported"}
+            onSupportChange={() => {
+              fetchAll();
+              fetchTop();
+            }}
+          />
         ))}
       </div>
     </>

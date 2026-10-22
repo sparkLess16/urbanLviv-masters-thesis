@@ -295,3 +295,254 @@
   padding: 0;
   list-style-position: inside;
 }
+
+/* Report page, as on the approved artboard. */
+.view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 20px;
+}
+
+.rp-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rp-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1f2328;
+}
+
+.rp-meta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 19px;
+  color: #6b7280;
+}
+
+.rp-description {
+  margin: 0;
+  font-size: 14px;
+  line-height: 21px;
+  color: #4b5563;
+}
+
+.rp-reactions {
+  display: flex;
+  gap: 8px;
+}
+
+.rp-react {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  background: #fff;
+  color: #1f2328;
+  border: 1px solid #d4d4d8;
+  border-radius: 30px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.rp-react:hover {
+  background: #f3f4f6;
+}
+
+.rp-react.is-active {
+  border-color: #000;
+  background: #f3f4f6;
+}
+
+.rp-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rp-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.rp-comment-input {
+  display: flex;
+  gap: 8px;
+}
+
+.rp-comment-input input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.rp-send {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border-radius: 50%;
+}
+
+.rp-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rp-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #eceef1;
+  border-radius: 14px;
+}
+
+.rp-comment.is-compact {
+  padding: 10px 12px;
+}
+
+.rp-comment-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.rp-comment-head .admin-label,
+.rp-comment-head .sup-badge,
+.rp-comment-head .sup-comment-point {
+  margin-left: 0;
+}
+
+.rp-comment-time {
+  margin-left: auto;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.rp-comment-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: #374151;
+}
+
+.rp-empty {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* List card: same pieces as the report page. */
+.rc-meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #6b7280;
+}
+
+.rc-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.rc-support {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.rc-comments-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.report-card .rp-comments {
+  gap: 8px;
+}
+
+/* Report page: date at the right end of the title row. */
+.rp-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rp-date {
+  flex: none;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.view-container .report-status {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* List card: one vertical rhythm (10 px between blocks, as on the Lists
+   artboard) instead of a different margin for every element. */
+.report-card.report-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.report-card.report-card > * {
+  margin: 0;
+}
+
+.report-card.report-card > .report-images {
+  padding: 0;
+}
+
+/* Title and the meta line under it stay close together. */
+.report-card.report-card > .report-header + .rc-meta {
+  margin-top: -6px;
+}
+
+.report-card .report-status {
+  font-size: 13px;
+}
+
+.report-card .report-date {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.report-card .report-description {
+  font-size: 13px;
+  line-height: 19px;
+  color: #4b5563;
+}
