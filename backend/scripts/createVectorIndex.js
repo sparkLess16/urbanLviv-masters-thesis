@@ -12,6 +12,11 @@ import { EMBEDDING_DIMENSIONS } from "../src/services/embeddingService.js";
 
 dotenv.config();
 
+// With --experiment the index is created in the experiment database instead of
+// the working one.
+const EXPERIMENT = process.argv.includes("--experiment");
+const DB_NAME = process.env.EXPERIMENT_DB_NAME || "urbanlviv_experiments";
+
 const INDEX_NAME = "reports_embedding_index";
 const POLL_INTERVAL_MS = 5000;
 const MAX_WAIT_MS = 5 * 60 * 1000;
@@ -19,7 +24,11 @@ const MAX_WAIT_MS = 5 * 60 * 1000;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const run = async () => {
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(
+    process.env.MONGO_URI,
+    EXPERIMENT ? { dbName: DB_NAME } : {},
+  );
+  console.log(`Database: ${mongoose.connection.name}`);
   const collection = Report.collection;
 
   const existing = await collection.listSearchIndexes(INDEX_NAME).toArray();
