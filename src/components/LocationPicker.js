@@ -16,7 +16,16 @@ const markerImage = L.icon({
   iconAnchor: [12, 41],
 });
 
-const LocationPicker = ({ value, onChange, readOnly = false }) => {
+// `compact` shortens the map and puts the hint on it; `overlay` is a control
+// shown in the map's top-right corner; `notice` is a warning from outside.
+const LocationPicker = ({
+  value,
+  onChange,
+  readOnly = false,
+  compact = false,
+  overlay = null,
+  notice = null,
+}) => {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
@@ -55,7 +64,9 @@ const LocationPicker = ({ value, onChange, readOnly = false }) => {
 
   useEffect(() => {
     const map = L.map(containerRef.current, {
-      center: value ? [value.lat, value.lng] : [LVIV_CENTER.lat, LVIV_CENTER.lng],
+      center: value
+        ? [value.lat, value.lng]
+        : [LVIV_CENTER.lat, LVIV_CENTER.lng],
       zoom: value ? 16 : 12,
       maxBounds: [
         [LVIV_BOUNDS.minLat - 0.05, LVIV_BOUNDS.minLng - 0.05],
@@ -99,6 +110,10 @@ const LocationPicker = ({ value, onChange, readOnly = false }) => {
     if (!mapRef.current) return;
     if (value) {
       placeMarker(value.lat, value.lng);
+      // The point may come from the "My location" button, off the visible area.
+      if (!mapRef.current.getBounds().contains([value.lat, value.lng])) {
+        mapRef.current.setView([value.lat, value.lng], 16);
+      }
     } else if (markerRef.current) {
       markerRef.current.remove();
       markerRef.current = null;
@@ -106,12 +121,19 @@ const LocationPicker = ({ value, onChange, readOnly = false }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value?.lat, value?.lng]);
 
+  // The picker's own warning wins over the external notice, then the default.
+  const message =
+    hint || notice || "Click the map or drag the pin to mark the place";
+
   return (
-    <div className="location-picker">
+    <div className={`location-picker${compact ? " compact" : ""}`}>
       <div ref={containerRef} className="location-picker-map" />
+      {overlay && <div className="location-picker-overlay">{overlay}</div>}
       {!readOnly && (
-        <p className="location-picker-hint">
-          {hint || "Click on the map to mark the place of the problem"}
+        <p
+          className={`location-picker-hint${hint || notice ? " is-warning" : ""}`}
+        >
+          {message}
         </p>
       )}
     </div>
