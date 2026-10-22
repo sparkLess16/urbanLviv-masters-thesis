@@ -106,3 +106,31 @@ test("applies limit and minimum score", () => {
     3,
   );
 });
+
+test("minSemantic filters by the text similarity, not by the combined score", () => {
+  // 111 m away: closeness lowers the combined score, but the texts are alike.
+  const candidates = [
+    { _id: "far-text", semantic: 0.7, geo: geoAt(0.0001) },
+    { _id: "near-copy", semantic: 0.93, geo: geoAt(0.001) },
+  ];
+  const ranked = rankCandidates(candidates, { ...options, minSemantic: 0.875 });
+  assert.deepEqual(
+    ranked.map((item) => item.reportId),
+    ["near-copy"],
+  );
+  assert.ok(ranked[0].score < 0.93);
+});
+
+test("minSemantic filters by the text similarity, not by the combined score", () => {
+  // 111 m away: closeness lowers the combined score, but the texts are alike.
+  const candidates = [
+    { _id: "far-text", semantic: 0.7, geo: geoAt(0.0001) },
+    { _id: "near-copy", semantic: 0.93, geo: geoAt(0.001) },
+  ];
+  const ranked = rankCandidates(candidates, { ...options, minSemantic: 0.875 });
+  assert.deepEqual(
+    ranked.map((item) => item.reportId),
+    ["near-copy"],
+  );
+  assert.ok(ranked[0].score < 0.93);
+});
