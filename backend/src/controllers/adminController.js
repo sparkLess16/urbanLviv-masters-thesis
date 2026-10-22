@@ -2,6 +2,7 @@ import Report from "../models/Report.js";
 import User from "../models/User.js";
 import Comment from "../models/Comment.js";
 import Notification from "../models/Notification.js";
+import { notifySupporters } from "../services/supportNotificationService.js";
 
 const getNotificationText = (status, title) => {
   switch (status) {
@@ -70,6 +71,7 @@ export const updateReportStatus = async (req, res) => {
       });
     }
 
+    const previousStatus = report.status_id;
     report.status_id = status_id;
     await report.save();
 
@@ -79,6 +81,11 @@ export const updateReportStatus = async (req, res) => {
       notification_content: getNotificationText(status_id, report.title),
       is_read: false,
     });
+
+    // People who support the report hear about a real change of status too.
+    if (previousStatus !== status_id) {
+      await notifySupporters(report, status_id, req.user._id);
+    }
 
     if (
       (status_id === "resolved" || status_id === "rejected") &&

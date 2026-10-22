@@ -6,6 +6,11 @@ import { analyzeReportWithAI } from "../services/geminiService.js";
 import { embedReport } from "../services/embeddingService.js";
 import { buildGeoPoint, geoToLatLng } from "../utils/geo.js";
 import { DISTRICTS, getDistrictLabel } from "../utils/districts.js";
+import { getSupportInfo } from "../services/supportService.js";
+import { notifySupporters } from "../services/supportNotificationService.js";
+import { computeTopScore } from "../utils/topScore.js";
+
+const NOT_SUPPORT = { $ne: "support" };
 
 export const createReport = async (req, res) => {
   try {
@@ -221,15 +226,23 @@ export const getReports = async (req, res) => {
     const reports = await Report.find()
       .sort({ created_dt: -1 })
       .populate("created_by", "firstName lastName role");
+    const supportInfo = await getSupportInfo(
+      reports.map((report) => report._id),
+      req.user._id,
+    );
 
     const formattedReports = await Promise.all(
       reports.map(async (report) => {
+        const support = supportInfo.get(String(report._id));
         const userReaction = await Reaction.findOne({
           report_id: report._id,
           created_by: req.user._id,
         });
 
-        const comments = await Comment.find({ report_id: report._id })
+        const comments = await Comment.find({
+          report_id: report._id,
+          kind: NOT_SUPPORT,
+        })
           .populate("created_by", "firstName lastName role")
           .sort({ created_dt: 1 });
 
@@ -264,6 +277,9 @@ export const getReports = async (req, res) => {
           is_user_disliked: userReaction?.type === "dislike",
 
           is_top_report: topReportIds.includes(report._id.toString()),
+
+          supported_by_count: support?.count ?? 0,
+          supported_by_me: support?.mine ?? false,
 
           created_by: report.created_by,
           created_dt: report.created_dt,
@@ -304,6 +320,10 @@ export const getReportById = async (req, res) => {
       created_by: req.user._id,
     });
 
+    const support = (await getSupportInfo([report._id], req.user._id)).get(
+      String(report._id),
+    );
+
     res.json({
       reportId: report._id,
       report_id: report._id,
@@ -341,6 +361,8 @@ export const getReportById = async (req, res) => {
       modified_dt: report.modified_dt,
 
       comments: [],
+      supported_by_count: support?.count ?? 0,
+      supported_by_me: support?.mine ?? false,
       user_reaction: userReaction ? userReaction.type : null,
       is_user_liked: userReaction?.type === "like",
       is_user_disliked: userReaction?.type === "dislike",
@@ -484,6 +506,7 @@ export const cancelReport = async (req, res) => {
     report.modified_by = req.user._id;
 
     await report.save();
+    await notifySupporters(report, "cancelled", req.user._id);
 
     res.json({ message: "Report cancelled successfully" });
   } catch (error) {
@@ -538,10 +561,16 @@ export const getTopReports = async (req, res) => {
       .populate("created_by", "firstName lastName role")
       .sort({ created_dt: -1 });
 
+    const supportInfo = await getSupportInfo(
+      reports.map((report) => report._id),
+      req.user._id,
+    );
+
     const formattedReports = await Promise.all(
       reports.map(async (report) => {
         const commentsCount = await Comment.countDocuments({
           report_id: report._id,
+          kind: NOT_SUPPORT,
         });
 
         const likesCount = await Reaction.countDocuments({
@@ -554,23 +583,18 @@ export const getTopReports = async (req, res) => {
           type: "dislike",
         });
 
-        const priorityWeight = {
-          critical: 40,
-          high: 30,
-          medium: 20,
-          low: 10,
-        };
-
         const userReaction = await Reaction.findOne({
           report_id: report._id,
           created_by: req.user._id,
         });
 
-        const topScore =
-          (priorityWeight[report.priority_id] || 0) +
-          likesCount * 2 -
-          dislikesCount +
-          commentsCount;
+        const topScore = computeTopScore({
+          priorityId: report.priority_id,
+          likes: likesCount,
+          dislikes: dislikesCount,
+          comments: commentsCount,
+          supports: supportInfo.get(String(report._id))?.count ?? 0,
+        });
 
         return {
           reportId: report._id,
@@ -591,6 +615,8 @@ export const getTopReports = async (req, res) => {
           total_likes: likesCount,
           total_dislikes: dislikesCount,
           comments_count: commentsCount,
+          supported_by_count: supportInfo.get(String(report._id))?.count ?? 0,
+          supported_by_me: supportInfo.get(String(report._id))?.mine ?? false,
           topScore,
           is_top_report: true,
           user_reaction: userReaction ? userReaction.type : null,
@@ -620,10 +646,12 @@ const getTopReportIds = async () => {
     },
   });
 
+  const supportInfo = await getSupportInfo(reports.map((report) => report._id));
   const reportsWithScore = await Promise.all(
     reports.map(async (report) => {
       const commentsCount = await Comment.countDocuments({
         report_id: report._id,
+        kind: NOT_SUPPORT,
       });
 
       const likesCount = await Reaction.countDocuments({
@@ -636,18 +664,13 @@ const getTopReportIds = async () => {
         type: "dislike",
       });
 
-      const priorityWeight = {
-        critical: 40,
-        high: 30,
-        medium: 20,
-        low: 10,
-      };
-
-      const topScore =
-        (priorityWeight[report.priority_id] || 0) +
-        likesCount * 2 -
-        dislikesCount +
-        commentsCount;
+      const topScore = computeTopScore({
+        priorityId: report.priority_id,
+        likes: likesCount,
+        dislikes: dislikesCount,
+        comments: commentsCount,
+        supports: supportInfo.get(String(report._id))?.count ?? 0,
+      });
 
       return {
         id: report._id.toString(),
