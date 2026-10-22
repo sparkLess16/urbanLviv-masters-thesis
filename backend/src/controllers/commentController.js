@@ -1,16 +1,32 @@
 import Comment from "../models/Comment.js";
+import Report from "../models/Report.js";
+import { geoToLatLng } from "../utils/geo.js";
+import { distanceMeters } from "../utils/geoMath.js";
 
 export const getReportComments = async (req, res) => {
   try {
-    const comments = await Comment.find({ report_id: req.params.reportId })
-      .populate("created_by", "firstName lastName role")
-      .sort({ created_dt: 1 });
+    const [comments, report] = await Promise.all([
+      Comment.find({ report_id: req.params.reportId })
+        .populate("created_by", "firstName lastName role")
+        .sort({ created_dt: 1 }),
+      Report.findById(req.params.reportId).select("geo").lean(),
+    ]);
+    const reportPoint = geoToLatLng(report?.geo);
 
     const formattedComments = comments.map((comment) => {
       const user = comment.created_by;
+      // Only supports can carry a point seen by the supporter.
+      const markedPoint = geoToLatLng(comment.geo);
 
       return {
         id: comment._id,
+        kind: comment.kind || "comment",
+        via: comment.via ?? null,
+        marked_point: markedPoint,
+        distance_m:
+          markedPoint && reportPoint
+            ? Math.round(distanceMeters(markedPoint, reportPoint))
+            : null,
         comment_content: comment.comment_content,
         created_dt: comment.created_dt,
         created_by_id: user?._id || null,
