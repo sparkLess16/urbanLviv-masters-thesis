@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { distanceMeters, jitterPoint } from "../src/utils/jitter.js";
+import { jitterPoint } from "../src/utils/jitter.js";
+import { distanceMeters } from "../src/utils/geoMath.js";
 
 const origin = { lat: 49.84, lng: 24.03 };
 

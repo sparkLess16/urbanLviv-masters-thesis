@@ -30,15 +30,3 @@ export const jitterPoint = (lat, lng, seed, minMeters = 5, maxMeters = 30) => {
     (METERS_PER_DEGREE_LAT * Math.cos((lat * Math.PI) / 180));
   return { lat: lat + dLat, lng: lng + dLng };
 };
-
-// Haversine distance in meters (used in tests and later by similarity code).
-export const distanceMeters = (a, b) => {
-  const toRad = (deg) => (deg * Math.PI) / 180;
-  const earthRadius = 6371000;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * earthRadius * Math.asin(Math.sqrt(h));
-};
