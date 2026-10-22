@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Report from "../src/models/Report.js";
 import { geoToLatLng } from "../src/utils/geo.js";
+import { DISTRICTS } from "../src/utils/districts.js";
 
 dotenv.config();
 
@@ -15,14 +16,9 @@ const APPLY = process.argv.includes("--apply");
 const REQUEST_DELAY_MS = 1100;
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse";
 
-const DISTRICTS_BY_UK_NAME = {
-  Галицький: "halytskyi",
-  Франківський: "frankivskyi",
-  Личаківський: "lychakivskyi",
-  Сихівський: "sykhivskyi",
-  Шевченківський: "shevchenkivskyi",
-  Залізничний: "zaliznychnyi",
-};
+const DISTRICTS_BY_UK_NAME = Object.fromEntries(
+  DISTRICTS.map(({ ukName, id }) => [ukName, id]),
+);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
