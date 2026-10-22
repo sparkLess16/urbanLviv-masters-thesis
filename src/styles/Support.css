@@ -1,0 +1,529 @@
+/* Shared pieces of the "support a report" feature: buttons, pills, hints,
+   dialogs. Other screens (report page, lists) reuse the same classes. */
+
+.sup-btn,
+.sup-btn-light,
+.sup-link {
+  height: 32px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.sup-btn {
+  padding: 0 16px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-weight: 500;
+}
+
+.sup-btn-light {
+  padding: 0 16px;
+  background: #fff;
+  color: #1f2328;
+  border: 1px solid #d4d4d8;
+  border-radius: 30px;
+  font-weight: 500;
+}
+
+.sup-btn:disabled,
+.sup-btn-light:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.sup-link {
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  color: #4b5563;
+  border: none;
+  text-decoration: underline;
+}
+
+/* Large variants for dialogs. */
+.sup-btn.is-large,
+.sup-btn-light.is-large {
+  height: 44px;
+  font-size: 14px;
+}
+
+.sup-btn,
+.sup-btn-light {
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.sup-btn:hover:not(:disabled) {
+  background: #2b2b2b;
+}
+
+.sup-btn-light:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.sup-btn:focus-visible,
+.sup-btn-light:focus-visible,
+.sup-link:focus-visible {
+  outline: 2px solid #1f2328;
+  outline-offset: 2px;
+}
+
+.sup-pill-green {
+  flex: none;
+  padding: 2px 10px;
+  background: #e8f6ec;
+  color: #137333;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sup-pill-blue {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #e8f0fe;
+  color: #1a4fb4;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sup-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.sup-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Hints block under the description. */
+.sup-hints {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: #f7f8fa;
+  border: 1px solid #e6e8ec;
+  border-radius: 16px;
+}
+
+.sup-hints-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sup-hints-text {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #6b7280;
+}
+
+.sup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 14px;
+}
+
+.sup-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sup-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.sup-card-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: #4b5563;
+}
+
+.sup-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid #eceef1;
+}
+
+.sup-supported {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #137333;
+}
+
+/* Dialogs. */
+.sup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  background: rgba(63, 63, 63, 0.6);
+}
+
+.sup-dialog {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.sup-dialog-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sup-dialog-sub {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 19px;
+  color: #6b7280;
+}
+
+.sup-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #f7f8fa;
+  border: 1px solid #e6e8ec;
+  border-radius: 12px;
+}
+
+.sup-summary strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sup-field-label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2328;
+}
+
+.sup-field-label span {
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.sup-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  height: 88px;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: none;
+}
+
+.sup-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2328;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Custom checkbox: a rounded square, black with a white tick when checked. */
+.sup-check input {
+  flex: none;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  display: inline-grid;
+  place-content: center;
+  background: #fff;
+  border: 1.5px solid #c7c9ce;
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.sup-check input::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  background: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23fff%27 stroke-width=%273.2%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M5 12.5l4.5 4.5L19 7.5%27/%3E%3C/svg%3E");
+  transform: scale(0);
+  transition: transform 0.12s ease-out;
+}
+
+.sup-check input:checked {
+  background: #000;
+  border-color: #000;
+}
+
+.sup-check input:checked::after {
+  transform: scale(1);
+}
+
+.sup-check input:hover:not(:checked) {
+  border-color: #8b8f97;
+}
+
+.sup-check input:focus-visible {
+  outline: 2px solid #1f2328;
+  outline-offset: 2px;
+}
+
+.sup-map {
+  position: relative;
+}
+
+.sup-map-canvas {
+  height: 220px;
+  border-radius: 12px;
+  z-index: 0;
+}
+
+.sup-map-hint {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 1000;
+  max-width: calc(100% - 16px);
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 8px;
+  font-size: 11px;
+  color: #4b5563;
+  pointer-events: none;
+}
+
+.sup-map-hint.is-warning {
+  color: #b3261e;
+}
+
+.sup-pin {
+  background: none;
+  border: none;
+}
+
+.sup-error {
+  margin: 0;
+  font-size: 13px;
+  color: #d92d20;
+}
+
+.sup-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sup-actions > button {
+  flex: 1;
+}
+
+.sup-actions > button.is-primary {
+  flex: 2;
+}
+
+.sup-actions-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sup-actions-column .sup-btn,
+.sup-actions-column .sup-btn-light {
+  height: 44px;
+}
+
+.sup-actions-column .sup-link {
+  justify-content: center;
+  height: 40px;
+  font-size: 14px;
+}
+
+.sup-warning-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff8e6;
+  color: #92650a;
+  border-radius: 12px;
+}
+
+.sup-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Report page: likes on the left, support on the right, in one row. */
+.sup-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sup-bar .reaction-buttons {
+  margin-top: 0;
+}
+
+.sup-bar-support {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.sup-pill-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sup-pill-green.is-large {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Comments that are supports. */
+.sup-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  background: #e8f0fe;
+  color: #1a4fb4;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.sup-comment-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 400;
+  color: #4b5563;
+  vertical-align: middle;
+}
+
+/* Legend of the report map. */
+.location-picker-legend {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 1000;
+  display: flex;
+  gap: 12px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #4b5563;
+  pointer-events: none;
+}
+
+.location-picker-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.location-picker-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Lists. */
+.report-support-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.report-support-row .sup-btn-light {
+  margin-left: auto;
+}
+
+.tab-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #6b7280;
+}
+
+.sup-link-danger {
+  align-self: center;
+  justify-content: center;
+  height: 36px;
+  color: #b3261e;
+}
