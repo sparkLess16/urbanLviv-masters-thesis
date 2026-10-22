@@ -6,6 +6,7 @@ import "../styles/ReportView.css";
 import "../styles/Report.css";
 import ConfirmDialog from "./ConfirmDialog";
 import LocationPicker from "./LocationPicker";
+import SimilarReports from "./SimilarReports";
 
 const ReportView = () => {
   const { reportId } = useParams();
@@ -494,6 +495,8 @@ const ReportView = () => {
             👎 {dislikes}
           </button>
         </div>
+
+        <SimilarReports reportId={reportId} />
 
         <div className="comments-section">
           <svg
