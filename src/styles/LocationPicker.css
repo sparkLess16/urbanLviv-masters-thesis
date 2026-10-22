@@ -1,4 +1,5 @@
 .location-picker {
+  position: relative;
   width: 100%;
 }
 
@@ -9,8 +10,63 @@
   z-index: 0;
 }
 
+.location-picker.compact .location-picker-map {
+  height: 200px;
+  border-radius: 14px;
+}
+
+/* Controls placed on the map (they must sit above Leaflet's own panes). */
+.location-picker-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
 .location-picker-hint {
   margin: 6px 0 0;
   font-size: 13px;
   color: #666;
+}
+
+.location-picker.compact .location-picker-hint {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: calc(100% - 90px);
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  font-size: 12px;
+  color: #4b5563;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.location-picker.compact .location-picker-hint.is-warning {
+  color: #b3261e;
+}
+
+.map-locate-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  background: white;
+  color: #1f2328;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.map-locate-btn:hover {
+  background: #f3f4f6;
+}
+
+.map-locate-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
 }

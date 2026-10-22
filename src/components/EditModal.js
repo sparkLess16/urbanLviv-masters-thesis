@@ -4,6 +4,9 @@ import "../styles/ReportForm.css";
 import "../styles/EditModal.css";
 import ConfirmDialog from "./ConfirmDialog";
 import LocationPicker from "./LocationPicker";
+import MyLocationButton from "./MyLocationButton";
+import Select from "./Select";
+import { useLocationAutofill } from "../hooks/useLocationAutofill";
 
 const EditModal = ({
   isOpen,
@@ -40,6 +43,18 @@ const EditModal = ({
   const [error, setError] = useState(null);
   const [isSubmit, setIsSubmit] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const {
+    pickPoint,
+    locate,
+    isLocating,
+    hint: locationHint,
+    onLocationTyped,
+    searchAddress,
+  } = useLocationAutofill({
+    setCoordinates: setEditedCoordinates,
+    setDistrictId: setEditedDistrict,
+    setAddress: setEditedPlace,
+  });
 
   useEffect(() => {
     if (reportData) {
@@ -88,13 +103,14 @@ const EditModal = ({
     setError(null);
 
     const newErrors = {};
-    if (!editedTitle.trim()) newErrors.title = "Required";
-    if (!editedPriority) newErrors.priority = "Required";
-    if (!editedType) newErrors.type = "Required";
-    if (!editedDescription.trim()) newErrors.description = "Required";
-    if (!editedPlace.trim()) newErrors.location = "Required";
-    if (!editedDistrict) newErrors.district = "Required";
-    if (!editedCoordinates) newErrors.coordinates = "Select the place on the map";
+    if (!editedTitle.trim()) newErrors.title = "Enter a short title";
+    if (!editedPriority) newErrors.priority = "Choose how urgent it is";
+    if (!editedType) newErrors.type = "Choose a problem type";
+    if (!editedDescription.trim())
+      newErrors.description = "Describe the problem";
+    if (!editedPlace.trim()) newErrors.location = "Enter the address";
+    if (!editedDistrict) newErrors.district = "Choose a district";
+    if (!editedCoordinates) newErrors.coordinates = "Mark the place on the map";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -145,15 +161,16 @@ const EditModal = ({
   return (
     <>
       <div className="modal-backdrop">
-        <div className="edit-report-form">
-          <div className="edit-report-form-upper">
+        <div className="rf-card rf-modal">
+          <div className="rf-header">
             <h2 className="addRep edit-modal">
               <svg
-                width="36"
-                height="36"
+                width="28"
+                height="28"
                 viewBox="0 0 36 36"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <rect width="36" height="36" rx="7" fill="white" />
                 <path
@@ -169,16 +186,21 @@ const EditModal = ({
                   fill="#292D32"
                 />
               </svg>
-              Edit Report
+              Edit report
             </h2>
 
-            <button className="close-modal-btn" onClick={onClose}>
+            <button
+              className="close-modal-btn"
+              onClick={onClose}
+              aria-label="Close"
+            >
               <svg
                 width="36"
                 height="36"
                 viewBox="0 0 36 36"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <rect width="36" height="36" rx="7" fill="black" />
                 <path
@@ -190,105 +212,139 @@ const EditModal = ({
             </button>
           </div>
 
-          <div className="oneline">
-            <div className="input-group wide">
-              <label>Name of problem</label>
+          <div className="rf-body">
+            {error && <div className="error-message">{error}</div>}
+
+            <div className="rf-field">
+              <LocationPicker
+                compact
+                value={editedCoordinates}
+                onChange={pickPoint}
+                notice={locationHint}
+                overlay={
+                  <MyLocationButton onClick={locate} isLocating={isLocating} />
+                }
+              />
+              {errors.coordinates && (
+                <span className="rf-error">{errors.coordinates}</span>
+              )}
+            </div>
+
+            <div className="rf-row">
+              <div className="rf-field rf-field-grow">
+                <label className="rf-label" htmlFor="ef-location">
+                  Address
+                </label>
+                <input
+                  id="ef-location"
+                  type="text"
+                  placeholder="Street and building, e.g. 12 Stusa Street"
+                  value={editedPlace}
+                  onChange={(e) => {
+                    setEditedPlace(e.target.value);
+                    onLocationTyped();
+                  }}
+                  onBlur={(e) => searchAddress(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") searchAddress(e.target.value);
+                  }}
+                />
+                {errors.location && (
+                  <span className="rf-error">{errors.location}</span>
+                )}
+              </div>
+              <div className="rf-field">
+                <label className="rf-label" htmlFor="ef-district">
+                  District
+                </label>
+                <Select
+                  id="ef-district"
+                  value={editedDistrict}
+                  onChange={setEditedDistrict}
+                  options={districts.map((o) => ({
+                    value: o.id,
+                    label: o.name,
+                  }))}
+                  placeholder="Select district"
+                />
+                {errors.district && (
+                  <span className="rf-error">{errors.district}</span>
+                )}
+              </div>
+            </div>
+
+            <div className="rf-field">
+              <label className="rf-label" htmlFor="ef-title">
+                Short title
+              </label>
               <input
+                id="ef-title"
                 type="text"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
               />
-              {errors.title && <p className="error-message">{errors.title}</p>}
+              {errors.title && <span className="rf-error">{errors.title}</span>}
             </div>
 
-            <div className="input-group wide">
-              <label>Priority of Problem</label>
-              <select
-                value={editedPriority}
-                onChange={(e) => setEditedPriority(e.target.value)}
-              >
-                {priorities.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              {errors.priority && (
-                <p className="error-message">{errors.priority}</p>
-              )}
+            <div className="rf-row">
+              <div className="rf-field">
+                <label className="rf-label" htmlFor="ef-type">
+                  Problem type
+                </label>
+                <Select
+                  id="ef-type"
+                  value={editedType}
+                  onChange={setEditedType}
+                  options={types.map((o) => ({ value: o.id, label: o.name }))}
+                  placeholder="Select problem type"
+                />
+                {errors.type && <span className="rf-error">{errors.type}</span>}
+              </div>
+              <div className="rf-field">
+                <label className="rf-label" htmlFor="ef-priority">
+                  Urgency
+                </label>
+                <Select
+                  id="ef-priority"
+                  value={editedPriority}
+                  onChange={setEditedPriority}
+                  options={priorities.map((o) => ({
+                    value: o.id,
+                    label: o.name,
+                  }))}
+                  placeholder="Select urgency"
+                />
+                {errors.priority && (
+                  <span className="rf-error">{errors.priority}</span>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="input-group full-width">
-            <label>Type of Problem</label>
-            <select
-              value={editedType}
-              onChange={(e) => setEditedType(e.target.value)}
-            >
-              {types.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-            {errors.type && <p className="error-message">{errors.type}</p>}
-          </div>
-
-          <div className="input-group full-width">
-            <label>Description</label>
-            <textarea
-              rows={3}
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-            />
-            {errors.description && (
-              <p className="error-message">{errors.description}</p>
-            )}
-          </div>
-
-          <div className="oneline">
-            <div className="input-group wide">
-              <label>Place of happening</label>
-              <input
-                type="text"
-                value={editedPlace}
-                onChange={(e) => setEditedPlace(e.target.value)}
+            <div className="rf-field">
+              <label className="rf-label" htmlFor="ef-description">
+                Description
+              </label>
+              <textarea
+                id="ef-description"
+                rows={3}
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
               />
-            </div>
-            <div className="input-group wide">
-              <label>District</label>
-              <select
-                value={editedDistrict}
-                onChange={(e) => setEditedDistrict(e.target.value)}
-              >
-                <option value="">Select district</option>
-                {districts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-
-              {errors.district && (
-                <span className="input-error">{errors.district}</span>
+              {errors.description && (
+                <span className="rf-error">{errors.description}</span>
               )}
             </div>
           </div>
 
-          <div className="input-group full-width">
-            <label>Place on the map</label>
-            <LocationPicker
-              value={editedCoordinates}
-              onChange={setEditedCoordinates}
-            />
-            {errors.coordinates && (
-              <span className="input-error">{errors.coordinates}</span>
-            )}
+          <div className="rf-footer">
+            <button
+              className="rf-submit"
+              onClick={submitReport}
+              disabled={isSubmitting || isSubmit}
+            >
+              {isSubmitting || isSubmit ? "Submitting..." : "Save Changes"}
+            </button>
           </div>
-
-          <button onClick={submitReport} disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Save Changes"}
-          </button>
         </div>
       </div>
     </>
