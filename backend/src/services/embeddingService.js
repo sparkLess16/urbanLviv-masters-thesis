@@ -5,7 +5,8 @@ export const EMBEDDING_MODEL =
 export const EMBEDDING_DIMENSIONS =
   Number(process.env.EMBEDDING_DIMENSIONS) || 768;
 
-// "document" for stored reports, "query" for search text and duplicate hints.
+// "document" for stored reports and duplicate hints (report vs report), "query"
+// for free-text search.
 const TASK_TYPES = {
   document: "RETRIEVAL_DOCUMENT",
   query: "RETRIEVAL_QUERY",
