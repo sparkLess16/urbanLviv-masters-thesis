@@ -14,7 +14,11 @@
     "sync:districts": "node scripts/syncDistrictsWithGeo.js",
     "index:vector": "node scripts/createVectorIndex.js",
     "backfill:embeddings": "node scripts/backfillEmbeddings.js",
-    "search:probe": "node scripts/searchProbe.js"
+    "search:probe": "node scripts/searchProbe.js",
+    "validate:dataset": "node scripts/validateDataset.js",
+    "geocode:dataset": "node scripts/geocodeDatasetAddresses.js",
+    "seed:dataset": "node scripts/seedDataset.js",
+    "eval:similarity": "node scripts/evalSimilarity.js"
   },
   "keywords": [],
   "author": "",
