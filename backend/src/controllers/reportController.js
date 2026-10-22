@@ -5,6 +5,7 @@ import Comment from "../models/Comment.js";
 import { analyzeReportWithAI } from "../services/geminiService.js";
 import { embedReport } from "../services/embeddingService.js";
 import { buildGeoPoint, geoToLatLng } from "../utils/geo.js";
+import { DISTRICTS, getDistrictLabel } from "../utils/districts.js";
 
 export const createReport = async (req, res) => {
   try {
@@ -241,7 +242,7 @@ export const getReports = async (req, res) => {
           coordinates: geoToLatLng(report.geo),
 
           district_id: report.district_id,
-          district_name: getDistrictName(report.district_id),
+          district_name: getDistrictLabel(report.district_id),
 
           type_id: report.type_id,
           type_name: getTypeName(report.type_id),
@@ -312,7 +313,7 @@ export const getReportById = async (req, res) => {
       location: report.location,
       coordinates: geoToLatLng(report.geo),
       district_id: report.district_id,
-      district_name: getDistrictName(report.district_id),
+      district_name: getDistrictLabel(report.district_id),
 
       type_id: report.type_id,
       type_name: getTypeName(report.type_id),
@@ -348,39 +349,8 @@ export const getReportById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-const getDistrictName = (district) => {
-  switch (district) {
-    case "halytskyi":
-      return "🏛 Halytskyi";
-
-    case "frankivskyi":
-      return "🌳 Frankivskyi";
-
-    case "lychakivskyi":
-      return "⛪ Lychakivskyi";
-
-    case "sykhivskyi":
-      return "🏙 Sykhivskyi";
-
-    case "shevchenkivskyi":
-      return "📚 Shevchenkivskyi";
-
-    case "zaliznychnyi":
-      return "🚉 Zaliznychnyi";
-
-    default:
-      return district;
-  }
-};
 export const getDistricts = (req, res) => {
-  res.json([
-    { id: "halytskyi", name: "🏛 Halytskyi" },
-    { id: "frankivskyi", name: "🌳 Frankivskyi" },
-    { id: "lychakivskyi", name: "⛪ Lychakivskyi" },
-    { id: "sykhivskyi", name: "🏙 Sykhivskyi" },
-    { id: "shevchenkivskyi", name: "📚 Shevchenkivskyi" },
-    { id: "zaliznychnyi", name: "🚉 Zaliznychnyi" },
-  ]);
+  res.json(DISTRICTS.map(({ id, name }) => ({ id, name })));
 };
 
 const uploadToCloudinary = (fileBuffer) => {
@@ -609,7 +579,7 @@ export const getTopReports = async (req, res) => {
           description: report.description,
           location: report.location,
           district_id: report.district_id,
-          district_name: getDistrictName(report.district_id),
+          district_name: getDistrictLabel(report.district_id),
           type_id: report.type_id,
           type_name: getTypeName(report.type_id),
           priority_id: report.priority_id,

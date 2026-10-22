@@ -3,6 +3,9 @@ import axios from "axios";
 import "../styles/ReportForm.css";
 import ConfirmDialog from "./ConfirmDialog";
 import LocationPicker from "./LocationPicker";
+import MyLocationButton from "./MyLocationButton";
+import Select from "./Select";
+import { useLocationAutofill } from "../hooks/useLocationAutofill";
 
 const ReportForm = ({ onSubmitted }) => {
   const [title, setTitle] = useState("");
@@ -25,6 +28,18 @@ const ReportForm = ({ onSubmitted }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const {
+    pickPoint,
+    locate,
+    isLocating,
+    hint: locationHint,
+    onLocationTyped,
+    searchAddress,
+  } = useLocationAutofill({
+    setCoordinates,
+    setDistrictId,
+    setAddress: setLocation,
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -98,13 +113,13 @@ const ReportForm = ({ onSubmitted }) => {
     setError(null);
 
     const newErrors = {};
-    if (!title.trim()) newErrors.title = "Required";
-    if (!priorityId) newErrors.priority = "Required";
-    if (!typeId) newErrors.type = "Required";
-    if (!description.trim()) newErrors.description = "Required";
-    if (!location.trim()) newErrors.location = "Required";
-    if (!districtId) newErrors.district = "Required";
-    if (!coordinates) newErrors.coordinates = "Select the place on the map";
+    if (!title.trim()) newErrors.title = "Enter a short title";
+    if (!priorityId) newErrors.priority = "Choose how urgent it is";
+    if (!typeId) newErrors.type = "Choose a problem type";
+    if (!description.trim()) newErrors.description = "Describe the problem";
+    if (!location.trim()) newErrors.location = "Enter the address";
+    if (!districtId) newErrors.district = "Choose a district";
+    if (!coordinates) newErrors.coordinates = "Mark the place on the map";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -183,133 +198,161 @@ const ReportForm = ({ onSubmitted }) => {
   };
 
   return (
-    <div className="report-form">
-      <h2 className="addRep">
-        <svg
-          width="36"
-          height="36"
-          viewBox="0 0 36 36"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect width="36" height="36" rx="7" fill="white" />
-          <path
-            d="M22 28.75H9C8.04 28.75 7.25 27.96 7.25 27V14C7.25 9.58 9.58 7.25 14 7.25H22C26.42 7.25 28.75 9.58 28.75 14V22C28.75 26.42 26.42 28.75 22 28.75ZM14 8.75C10.42 8.75 8.75 10.42 8.75 14V27C8.75 27.14 8.86 27.25 9 27.25H22C25.58 27.25 27.25 25.58 27.25 22V14C27.25 10.42 25.58 8.75 22 8.75H14Z"
-            fill="#292D32"
-          />
-          <path
-            d="M21.5 18.75H14.5C14.09 18.75 13.75 18.41 13.75 18C13.75 17.59 14.09 17.25 14.5 17.25H21.5C21.91 17.25 22.25 17.59 22.25 18C22.25 18.41 21.91 18.75 21.5 18.75Z"
-            fill="#292D32"
-          />
-          <path
-            d="M18 22.25C17.59 22.25 17.25 21.91 17.25 21.5V14.5C17.25 14.09 17.59 13.75 18 13.75C18.41 13.75 18.75 14.09 18.75 14.5V21.5C18.75 21.91 18.41 22.25 18 22.25Z"
-            fill="#292D32"
-          />
-        </svg>
-        Add a Report
-      </h2>
-      {error && <div className="error-message">{error}</div>}
+    <div className="rf-card">
+      <div className="rf-header">
+        <h2 className="addRep">
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 36 36"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <rect width="36" height="36" rx="7" fill="white" />
+            <path
+              d="M22 28.75H9C8.04 28.75 7.25 27.96 7.25 27V14C7.25 9.58 9.58 7.25 14 7.25H22C26.42 7.25 28.75 9.58 28.75 14V22C28.75 26.42 26.42 28.75 22 28.75ZM14 8.75C10.42 8.75 8.75 10.42 8.75 14V27C8.75 27.14 8.86 27.25 9 27.25H22C25.58 27.25 27.25 25.58 27.25 22V14C27.25 10.42 25.58 8.75 22 8.75H14Z"
+              fill="#292D32"
+            />
+            <path
+              d="M21.5 18.75H14.5C14.09 18.75 13.75 18.41 13.75 18C13.75 17.59 14.09 17.25 14.5 17.25H21.5C21.91 17.25 22.25 17.59 22.25 18C22.25 18.41 21.91 18.75 21.5 18.75Z"
+              fill="#292D32"
+            />
+            <path
+              d="M18 22.25C17.59 22.25 17.25 21.91 17.25 21.5V14.5C17.25 14.09 17.59 13.75 18 13.75C18.41 13.75 18.75 14.09 18.75 14.5V21.5C18.75 21.91 18.41 22.25 18 22.25Z"
+              fill="#292D32"
+            />
+          </svg>
+          Report a problem
+        </h2>
+      </div>
 
-      <div className="oneline">
-        <div className="input-group wide">
-          <label>Name of problem</label>
+      <div className="rf-body">
+        {error && <div className="error-message">{error}</div>}
+
+        <div className="rf-field">
+          <LocationPicker
+            compact
+            value={coordinates}
+            onChange={pickPoint}
+            notice={locationHint}
+            overlay={
+              <MyLocationButton onClick={locate} isLocating={isLocating} />
+            }
+          />
+          {errors.coordinates && (
+            <span className="rf-error">{errors.coordinates}</span>
+          )}
+        </div>
+
+        <div className="rf-row">
+          <div className="rf-field rf-field-grow">
+            <label className="rf-label" htmlFor="rf-location">
+              Address
+            </label>
+            <input
+              id="rf-location"
+              type="text"
+              placeholder="Street and building, e.g. 12 Stusa Street"
+              value={location}
+              onChange={(e) => {
+                setLocation(e.target.value);
+                onLocationTyped();
+              }}
+              onBlur={(e) => searchAddress(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") searchAddress(e.target.value);
+              }}
+            />
+            {errors.location && (
+              <span className="rf-error">{errors.location}</span>
+            )}
+          </div>
+          <div className="rf-field">
+            <label className="rf-label" htmlFor="rf-district">
+              District
+            </label>
+            <Select
+              id="rf-district"
+              value={districtId}
+              onChange={setDistrictId}
+              options={districts.map((o) => ({ value: o.id, label: o.name }))}
+              placeholder="Select district"
+            />
+            {errors.district && (
+              <span className="rf-error">{errors.district}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="rf-field">
+          <label className="rf-label" htmlFor="rf-title">
+            Short title
+          </label>
           <input
+            id="rf-title"
             type="text"
             value={title}
+            placeholder="Short summary, e.g. Pothole on the road"
             onChange={(e) => setTitle(e.target.value)}
           />
-          {errors.title && <span className="input-error">{errors.title}</span>}
+          {errors.title && <span className="rf-error">{errors.title}</span>}
         </div>
-        <div className="input-group wide">
-          <label>Priority of Problem</label>
-          <select
-            value={priorityId}
-            onChange={(e) => setPriorityId(e.target.value)}
-          >
-            <option value="">Select priority</option>
-            {priorities.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
 
-          {errors.priority && (
-            <span className="input-error">{errors.priority}</span>
-          )}
+        <div className="rf-row">
+          <div className="rf-field">
+            <label className="rf-label" htmlFor="rf-type">
+              Problem type
+            </label>
+            <Select
+              id="rf-type"
+              value={typeId}
+              onChange={setTypeId}
+              options={types.map((o) => ({ value: o.id, label: o.name }))}
+              placeholder="Select problem type"
+            />
+            {errors.type && <span className="rf-error">{errors.type}</span>}
+          </div>
+          <div className="rf-field">
+            <label className="rf-label" htmlFor="rf-priority">
+              Urgency
+            </label>
+            <Select
+              id="rf-priority"
+              value={priorityId}
+              onChange={setPriorityId}
+              options={priorities.map((o) => ({ value: o.id, label: o.name }))}
+              placeholder="Select urgency"
+            />
+            {errors.priority && (
+              <span className="rf-error">{errors.priority}</span>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="input-group full-width">
-        <label>Type of Problem</label>
-        <select value={typeId} onChange={(e) => setTypeId(e.target.value)}>
-          <option value="">Select type</option>
-          {types.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-
-        {errors.type && <span className="input-error">{errors.type}</span>}
-      </div>
-
-      <div className="input-group full-width">
-        <label>Description</label>
-        <textarea
-          rows={3}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-        {errors.description && (
-          <span className="input-error">{errors.description}</span>
-        )}
-      </div>
-
-      <div className="oneline">
-        <div className="input-group wide">
-          <label>Place of happening</label>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
+        <div className="rf-field">
+          <label className="rf-label" htmlFor="rf-description">
+            Description
+          </label>
+          <textarea
+            id="rf-description"
+            rows={3}
+            value={description}
+            placeholder="Describe what happened and who it affects"
+            onChange={(e) => setDescription(e.target.value)}
           />
-        </div>
-        <div className="input-group wide">
-          <label>District</label>
-          <select
-            value={districtId}
-            onChange={(e) => setDistrictId(e.target.value)}
-          >
-            <option value="">Select district</option>
-            {districts.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-
-          {errors.district && (
-            <span className="input-error">{errors.district}</span>
+          {errors.description && (
+            <span className="rf-error">{errors.description}</span>
           )}
         </div>
-      </div>
 
-      <div className="input-group full-width">
-        <label>Place on the map</label>
-        <LocationPicker value={coordinates} onChange={setCoordinates} />
-        {errors.coordinates && (
-          <span className="input-error">{errors.coordinates}</span>
-        )}
-      </div>
-
-      <div className="input-group full-width">
-        <label>Photo</label>
-        <div id="photoContainer" className="photo-container full-width">
-          {photoInputs.map((id) => (
-            <div key={id} className="photo-upload-wrapper">
+        <div className="rf-field">
+          <span className="rf-label">Photos (optional)</span>
+          <div id="photoContainer" className="rf-photos">
+            {photoInputs.map((id) => (
               <div
-                className="photo-upload"
+                key={id}
+                className="rf-photo-tile"
                 onClick={() => handlePhotoClick(id)}
               >
                 {previews[id] ? (
@@ -318,6 +361,7 @@ const ReportForm = ({ onSubmitted }) => {
                     <button
                       type="button"
                       className="delete-btn"
+                      aria-label="Remove photo"
                       onClick={(e) => {
                         e.stopPropagation();
                         requestPhotoDelete(id);
@@ -327,7 +371,7 @@ const ReportForm = ({ onSubmitted }) => {
                     </button>
                   </div>
                 ) : (
-                  <span>Add Photo</span>
+                  <span aria-label="Add photo">+</span>
                 )}
                 <input
                   type="file"
@@ -337,14 +381,20 @@ const ReportForm = ({ onSubmitted }) => {
                   onChange={(e) => handlePhotoChange(e, id)}
                 />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      <button onClick={submitReport} disabled={isSubmitting}>
-        {isSubmitting ? "Submitting..." : "Add"}
-      </button>
+      <div className="rf-footer">
+        <button
+          className="rf-submit"
+          onClick={submitReport}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Submitting..." : "Submit report"}
+        </button>
+      </div>
       {showConfirm && (
         <ConfirmDialog
           message={["Report created successfully"]}
