@@ -7,6 +7,11 @@ import "../styles/Report.css";
 import ConfirmDialog from "./ConfirmDialog";
 import LocationPicker from "./LocationPicker";
 import SimilarReports from "./SimilarReports";
+import SupportDialog from "./SupportDialog";
+import SupportPill from "./SupportPill";
+import { stopSupportingReport } from "../services/supportApi";
+import { formatDate } from "../utils/formatDate";
+import { stripLeadingEmoji } from "../utils/text";
 
 const ReportView = () => {
   const { reportId } = useParams();
@@ -34,6 +39,9 @@ const ReportView = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
+  const [showSupportDialog, setShowSupportDialog] = useState(false);
+  const [supportBusy, setSupportBusy] = useState(false);
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
 
   const navigate = useNavigate();
 
@@ -161,6 +169,37 @@ const ReportView = () => {
     reportData.status_id,
   );
   const formattedDate = new Date(created_dt).toLocaleDateString();
+
+  // Support: the counter and "do I support it" come with the report; after a
+  // change the report data is updated, which also reloads the comments.
+  const supporterPoints = comments
+    .filter((comment) => comment.kind === "support" && comment.marked_point)
+    .map((comment) => comment.marked_point);
+  const mySupport = comments.find(
+    (comment) =>
+      comment.kind === "support" &&
+      comment.created_by_id?.toString() === userId?.toString(),
+  );
+
+  const applySupport = (data) =>
+    setReportData((previous) => ({
+      ...previous,
+      supported_by_count: data.supported_by_count,
+      supported_by_me: data.supported_by_me,
+    }));
+
+  const handleStopSupporting = async () => {
+    setSupportBusy(true);
+    try {
+      applySupport(await stopSupportingReport(reportId));
+      setShowStopConfirm(false);
+      setShowSupportDialog(false);
+    } catch (err) {
+      console.error("Stop supporting failed", err);
+    } finally {
+      setSupportBusy(false);
+    }
+  };
 
   const handleAddComment = async () => {
     if (!commentInput.trim()) return;
@@ -401,6 +440,24 @@ const ReportView = () => {
         >
           {status_name}
         </div>
+        <div className="rp-head">
+          <div className="rp-title-row">
+            <h1 className="rp-title">{title}</h1>
+            <span className="rp-date">{formatDate(created_dt)}</span>
+          </div>
+          <p className="rp-meta">
+            {[
+              type,
+              stripLeadingEmoji(district_name),
+              location,
+              priorityName && `${priorityName} priority`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+        <p className="rp-description">{description}</p>
+
         {attachments.length > 0 && (
           <div className="report-images">
             {attachments.length > 0 && (
@@ -420,13 +477,6 @@ const ReportView = () => {
             )}
           </div>
         )}
-
-        <div className="report-header">
-          <strong>{title}</strong>
-          <span className="report-date">{formattedDate}</span>
-        </div>
-
-        <p className="report-description">{description}</p>
         {isAdmin && (
           <div className="admin-info-report">
             <div className="admin-info-summary">
@@ -455,99 +505,173 @@ const ReportView = () => {
           </div>
         )}
 
-        <div className="report-location-priority">
-          <div className="report-details">
-            <p className="report-type margin">Priority</p>
-            <p className="report-priority margin"> ⚠️ {priorityName}</p>
-          </div>
-          <div className="report-details">
-            <p className="report-type margin">Type</p>
-            <p className="report-priority margin"> 📄 {type}</p>
-          </div>
-          <div className="report-details">
-            <p className="report-type margin">District</p>
-            <p className="report-priority margin"> {district_name}</p>
-          </div>
-          <div className="report-details">
-            <p className="report-type margin">Location</p>
-            <p className="report-location">📍 {location}</p>
-          </div>
-        </div>
+        {coordinates && (
+          <LocationPicker
+            value={coordinates}
+            readOnly
+            extraPoints={supporterPoints}
+          />
+        )}
 
-        {coordinates && <LocationPicker value={coordinates} readOnly />}
-
-        <div className="reaction-buttons">
-          <button
-            className={`reaction-btn ${userReaction === "like" ? "active" : ""}`}
-            onClick={(e) => {
-              handleLike();
-            }}
-          >
-            ❤️ {likes}
-          </button>
-
-          <button
-            className={`reaction-btn ${userReaction === "dislike" ? "active" : ""}`}
-            onClick={(e) => {
-              handleDislike();
-            }}
-          >
-            👎 {dislikes}
-          </button>
-        </div>
-
-        <SimilarReports reportId={reportId} />
-
-        <div className="comments-section">
-          <svg
-            width="1100"
-            height="2"
-            viewBox="0 0 1100 2"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M0 1H1100" stroke="#F3F3F3" strokeWidth="2" />
-          </svg>
-          <div className="comment-section-title">
-            <h3 className="comment-title">Comment Section</h3>
-            {comments.length > 2 && (
-              <button
-                className="see-more-comments-btn"
-                onClick={() => setShowAllComments(!showAllComments)}
+        <div className="sup-bar">
+          <div className="rp-reactions">
+            <button
+              type="button"
+              className={`rp-react${userReaction === "like" ? " is-active" : ""}`}
+              aria-label={`Like, ${likes}`}
+              aria-pressed={userReaction === "like"}
+              onClick={handleLike}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                {showAllComments ? "Hide" : `See more (${comments.length - 2})`}
-              </button>
+                <path d="M7 11v9H4v-9h3zM7 11l4-8c1.5 0 2.5 1 2.5 2.5V9h5a2 2 0 012 2.3l-1.2 7A2 2 0 0117.3 20H7" />
+              </svg>
+              {likes}
+            </button>
+            <button
+              type="button"
+              className={`rp-react${userReaction === "dislike" ? " is-active" : ""}`}
+              aria-label={`Dislike, ${dislikes}`}
+              aria-pressed={userReaction === "dislike"}
+              onClick={handleDislike}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                style={{ transform: "rotate(180deg)" }}
+              >
+                <path d="M7 11v9H4v-9h3zM7 11l4-8c1.5 0 2.5 1 2.5 2.5V9h5a2 2 0 012 2.3l-1.2 7A2 2 0 0117.3 20H7" />
+              </svg>
+              {dislikes}
+            </button>
+          </div>
+          <div className="sup-bar-support">
+            <SupportPill count={reportData.supported_by_count} long />
+            {reportData.supported_by_me && (
+              <>
+                <span className="sup-pill-green is-large">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                  You support this
+                </span>
+                <button
+                  type="button"
+                  className="sup-btn-light"
+                  onClick={() => setShowStopConfirm(true)}
+                >
+                  Stop supporting
+                </button>
+              </>
             )}
           </div>
+        </div>
 
-          {(showAllComments ? comments : comments.slice(-2)).map(
-            (comment, index) => {
-              const isMyComment =
-                comment.created_by_id?.toString() === userId?.toString();
+        <section className="rp-comments">
+          <h2 className="rp-section-title">Comments</h2>
 
-              return (
-                <div className="comment comment-wrapper" key={index}>
-                  <div className="comment-upper">
-                    <p className="comment-name">
-                      {comment.created_by || "user1"}
+          {!["Cancelled", "Resolved", "Rejected"].includes(status_name) && (
+            <div className="rp-comment-input">
+              <input
+                type="text"
+                id="commentText"
+                placeholder="Write a comment…"
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddComment();
+                }}
+              />
+              <button
+                type="button"
+                id="submitComment"
+                className="rp-send"
+                aria-label="Send comment"
+                onClick={handleAddComment}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3.61088 12.8685C3.02755 12.8685 2.46172 12.641 2.01255 12.2035C1.28338 11.4918 1.10838 10.4418 1.56338 9.53182L2.50838 7.64182C2.70672 7.24516 2.70672 6.76682 2.50838 6.36432L1.56338 4.46849C1.10838 3.55849 1.28338 2.50849 2.01255 1.79682C2.74172 1.08516 3.79172 0.927656 4.69588 1.40599L11.4567 4.96432C12.2151 5.36099 12.6876 6.14266 12.6876 7.00016C12.6876 7.85766 12.2151 8.63932 11.4567 9.03599L4.69588 12.5943C4.34588 12.781 3.97838 12.8685 3.61088 12.8685Z"
+                    fill="white"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          <div className="rp-comment-list">
+            {comments.length === 0 && (
+              <p className="rp-empty">No comments yet.</p>
+            )}
+            {[...comments]
+              .sort((a, b) => new Date(b.created_dt) - new Date(a.created_dt))
+              .map((comment) => {
+                const isSupport = comment.kind === "support";
+                const hasText = Boolean(comment.comment_content);
+                const isMyComment =
+                  comment.created_by_id?.toString() === userId?.toString();
+
+                return (
+                  <article
+                    key={comment.id}
+                    className={`rp-comment comment-wrapper${isSupport && !hasText ? " is-compact" : ""}`}
+                  >
+                    <div className="rp-comment-head">
+                      <b>{comment.created_by || "Unknown user"}</b>
                       {comment.created_by_role_name === "Administrator" && (
                         <span className="admin-label">Admin</span>
                       )}
-                    </p>
-                    <p className="comment-date">
-                      {new Date(comment.created_dt).toLocaleString("en-GB", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                  <div>
-                    {/* <p className="comment-description">
-                    {comment.comment_content}
-                  </p> */}
+                      {isSupport && <span className="sup-badge">Supports</span>}
+                      {comment.marked_point && comment.distance_m !== null && (
+                        <span className="sup-comment-point">
+                          marked a point · {comment.distance_m} m from the
+                          report
+                        </span>
+                      )}
+                      <span className="rp-comment-time">
+                        {new Date(comment.created_dt).toLocaleString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+
                     {editingCommentId === comment.id ? (
                       <div className="comment-edit-row">
                         <input
@@ -575,73 +699,49 @@ const ReportView = () => {
                         </div>
                       </div>
                     ) : (
-                      <p className="comment-description">
-                        {comment.comment_content}
-                      </p>
+                      hasText && (
+                        <p className="rp-comment-text">
+                          {comment.comment_content}
+                        </p>
+                      )
                     )}
 
                     {isMyComment && editingCommentId !== comment.id && (
                       <div className="comment-hover-actions">
                         <button
                           className="comment-icon-btn"
+                          aria-label={
+                            isSupport ? "Edit support" : "Edit comment"
+                          }
                           onClick={() => {
-                            setEditingCommentId(comment.id);
-                            setEditingCommentText(comment.comment_content);
+                            if (isSupport) {
+                              setShowSupportDialog(true);
+                            } else {
+                              setEditingCommentId(comment.id);
+                              setEditingCommentText(comment.comment_content);
+                            }
                           }}
                         >
                           ✏️
                         </button>
-
-                        <button
-                          className="comment-icon-btn"
-                          onClick={() => handleDeleteComment(comment.id)}
-                        >
-                          🗑️
-                        </button>
+                        {!isSupport && (
+                          <button
+                            className="comment-icon-btn"
+                            aria-label="Delete comment"
+                            onClick={() => handleDeleteComment(comment.id)}
+                          >
+                            🗑️
+                          </button>
+                        )}
                       </div>
                     )}
-                  </div>
-                </div>
-              );
-            },
-          )}
-
-          <svg
-            width="1100"
-            height="2"
-            viewBox="0 0 1100 2"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M0 1H1100" stroke="#F3F3F3" strokeWidth="2" />
-          </svg>
-        </div>
-
-        {!["Cancelled", "Resolved", "Rejected"].includes(status_name) && (
-          <div className="comment-input">
-            <input
-              type="text"
-              id="commentText"
-              placeholder="Write a comment"
-              value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-            />
-            <button id="submitComment" onClick={handleAddComment}>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M3.61088 12.8685C3.02755 12.8685 2.46172 12.641 2.01255 12.2035C1.28338 11.4918 1.10838 10.4418 1.56338 9.53182L2.50838 7.64182C2.70672 7.24516 2.70672 6.76682 2.50838 6.36432L1.56338 4.46849C1.10838 3.55849 1.28338 2.50849 2.01255 1.79682C2.74172 1.08516 3.79172 0.927656 4.69588 1.40599L11.4567 4.96432C12.2151 5.36099 12.6876 6.14266 12.6876 7.00016C12.6876 7.85766 12.2151 8.63932 11.4567 9.03599L4.69588 12.5943C4.34588 12.781 3.97838 12.8685 3.61088 12.8685Z"
-                  fill="white"
-                />
-              </svg>
-            </button>
+                  </article>
+                );
+              })}
           </div>
-        )}
+        </section>
+
+        <SimilarReports reportId={reportId} />
       </div>
 
       <EditModal
@@ -753,6 +853,52 @@ const ReportView = () => {
             </button>
           </div>
         </div>
+      )}
+      {showSupportDialog && mySupport && (
+        <SupportDialog
+          mode="edit"
+          item={{
+            reportId: String(reportData.reportId || reportData.report_id),
+            title,
+            type_id: reportData.type_id,
+            distance_m: null,
+            created_dt,
+            point: coordinates ?? null,
+          }}
+          typeName={type}
+          formPoint={null}
+          initial={{
+            comment: mySupport.comment_content || "",
+            point: mySupport.marked_point,
+          }}
+          onClose={() => setShowSupportDialog(false)}
+          onSupported={(item, data) => {
+            setShowSupportDialog(false);
+            applySupport(data);
+          }}
+          onStop={() => setShowStopConfirm(true)}
+        />
+      )}
+      {showStopConfirm && (
+        <ConfirmDialog
+          icon="warning"
+          message={[
+            "Stop supporting this report?",
+            "You will no longer be notified when its status changes.",
+          ]}
+          buttons={[
+            {
+              label: "Keep supporting",
+              variant: "primary",
+              onClick: () => setShowStopConfirm(false),
+            },
+            {
+              label: supportBusy ? "Stopping..." : "Yes, stop supporting",
+              variant: "destructive",
+              onClick: handleStopSupporting,
+            },
+          ]}
+        />
       )}
     </div>
   );

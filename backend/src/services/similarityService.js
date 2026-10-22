@@ -14,6 +14,9 @@ export const VECTOR_INDEX_NAME = "reports_embedding_index";
 // Starting values; tuned on the evaluation set in step EV.
 export const DEFAULTS = { alpha: 0.7, radiusM: 500, limit: 5 };
 
+const DEFAULT_EXCLUDED_STATUSES = ["cancelled"];
+const EARTH_RADIUS_M = 6378100;
+
 const GEO_CANDIDATES = 200;
 const VECTOR_CANDIDATES = 100;
 const VECTOR_NUM_CANDIDATES = 200;
@@ -35,7 +38,7 @@ const round = (value, digits = 4) => Number(value.toFixed(digits));
 //   then only the semantic part is used.
 export const rankCandidates = (
   candidates,
-  { point = null, alpha, radiusM, limit, minScore = 0 },
+  { point = null, alpha, radiusM, limit, minScore = 0, minSemantic = 0 },
 ) => {
   const effectiveAlpha = point ? alpha : 1;
 
@@ -59,7 +62,9 @@ export const rankCandidates = (
         spatial_score: round(spatial),
       };
     })
-    .filter((item) => item.score >= minScore)
+    .filter(
+      (item) => item.score >= minScore && item.semantic_score >= minSemantic,
+    )
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 };
@@ -73,18 +78,22 @@ export const findGeoFirst = async ({
   embedding,
   point,
   excludeId,
+  excludeUserId,
+  excludeStatuses = DEFAULT_EXCLUDED_STATUSES,
   alpha = DEFAULTS.alpha,
   radiusM = DEFAULTS.radiusM,
   limit = DEFAULTS.limit,
   minScore = 0,
+  minSemantic = 0,
 }) => {
   if (!point) throw new Error("geo-first search needs a query point");
 
   const query = {
-    status_id: { $ne: "cancelled" },
+    status_id: { $nin: excludeStatuses },
     embedding: { $exists: true },
   };
   if (excludeId) query._id = { $ne: toObjectId(excludeId) };
+  if (excludeUserId) query.created_by = { $ne: toObjectId(excludeUserId) };
 
   const nearby = await Report.aggregate([
     {
@@ -107,7 +116,35 @@ export const findGeoFirst = async ({
     semantic: Math.min(1, Math.max(0, dotProduct(embedding, report.embedding))),
   }));
 
-  return rankCandidates(candidates, { point, alpha, radiusM, limit, minScore });
+  return rankCandidates(candidates, {
+    point,
+    alpha,
+    radiusM,
+    limit,
+    minScore,
+    minSemantic,
+  });
+};
+
+// Free pre-check (no Gemini): is there any report within radiusM of the point?
+// Used to skip the paid embedding call when nothing could be similar.
+export const hasNearbyReports = async ({
+  point,
+  radiusM = DEFAULTS.radiusM,
+  excludeUserId,
+  excludeStatuses = DEFAULT_EXCLUDED_STATUSES,
+}) => {
+  const query = {
+    geo: {
+      $geoWithin: {
+        $centerSphere: [[point.lng, point.lat], radiusM / EARTH_RADIUS_M],
+      },
+    },
+    status_id: { $nin: excludeStatuses },
+    embedding: { $exists: true },
+  };
+  if (excludeUserId) query.created_by = { $ne: toObjectId(excludeUserId) };
+  return Boolean(await Report.exists(query));
 };
 
 // Strategy 2 (vector-first, required by NFR-04): take the closest reports by
@@ -121,6 +158,7 @@ export const findVectorFirst = async ({
   radiusM = DEFAULTS.radiusM,
   limit = DEFAULTS.limit,
   minScore = 0,
+  minSemantic = 0,
 }) => {
   const found = await Report.aggregate([
     {
@@ -148,7 +186,14 @@ export const findVectorFirst = async ({
       semantic: atlasScoreToCosine(report.atlas_score),
     }));
 
-  return rankCandidates(candidates, { point, alpha, radiusM, limit, minScore });
+  return rankCandidates(candidates, {
+    point,
+    alpha,
+    radiusM,
+    limit,
+    minScore,
+    minSemantic,
+  });
 };
 
 export const STRATEGIES = {

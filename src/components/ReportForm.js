@@ -5,7 +5,12 @@ import ConfirmDialog from "./ConfirmDialog";
 import LocationPicker from "./LocationPicker";
 import MyLocationButton from "./MyLocationButton";
 import Select from "./Select";
+import DuplicateHints from "./DuplicateHints";
+import SupportDialog from "./SupportDialog";
+import SubmitDuplicateDialog from "./SubmitDuplicateDialog";
 import { useLocationAutofill } from "../hooks/useLocationAutofill";
+import { useSimilarReports } from "../hooks/useSimilarReports";
+import { supportReport } from "../services/supportApi";
 
 const ReportForm = ({ onSubmitted }) => {
   const [title, setTitle] = useState("");
@@ -28,6 +33,17 @@ const ReportForm = ({ onSubmitted }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [supportTarget, setSupportTarget] = useState(null);
+  const [submitMatch, setSubmitMatch] = useState(null);
+  const [submitMatchBusy, setSubmitMatchBusy] = useState(false);
+  const [submitMatchError, setSubmitMatchError] = useState(null);
+  const [showSupportConfirm, setShowSupportConfirm] = useState(false);
+  const {
+    items: hintItems,
+    supportedIds,
+    markSupported,
+    check: checkHints,
+  } = useSimilarReports({ title, description, coordinates });
   const {
     pickPoint,
     locate,
@@ -108,10 +124,21 @@ const ReportForm = ({ onSubmitted }) => {
     reader.readAsDataURL(file);
   };
 
-  const submitReport = async () => {
-    setIsSubmitting(true);
-    setError(null);
+  const resetForm = () => {
+    setTitle("");
+    setPriorityId("");
+    setTypeId("");
+    setDescription("");
+    setLocation("");
+    setCoordinates(null);
+    setDistrictId("");
+    setPreviews({});
+    setAttachments({});
+    setPhotoInputs([0]);
+    setErrors({});
+  };
 
+  const validate = () => {
     const newErrors = {};
     if (!title.trim()) newErrors.title = "Enter a short title";
     if (!priorityId) newErrors.priority = "Choose how urgent it is";
@@ -121,13 +148,13 @@ const ReportForm = ({ onSubmitted }) => {
     if (!districtId) newErrors.district = "Choose a district";
     if (!coordinates) newErrors.coordinates = "Mark the place on the map";
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setIsSubmitting(false);
-      return;
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    setErrors({});
+  const createReport = async () => {
+    setIsSubmitting(true);
+    setError(null);
 
     try {
       const formData = new FormData();
@@ -156,17 +183,7 @@ const ReportForm = ({ onSubmitted }) => {
       if (onSubmitted) {
         onSubmitted();
       }
-      setTitle("");
-      setPriorityId("");
-      setTypeId("");
-      setDescription("");
-      setLocation("");
-      setCoordinates(null);
-      setDistrictId("");
-      setPreviews({});
-      setAttachments({});
-      setPhotoInputs([0]);
-      setErrors({});
+      resetForm();
     } catch (err) {
       console.error("Create report failed", err);
       setError("Не вдалося створити звіт");
@@ -174,6 +191,59 @@ const ReportForm = ({ onSubmitted }) => {
       setIsSubmitting(false);
     }
   };
+
+  // The report is not created yet. If a very similar report is found nearby,
+  // the person decides first: support it or submit as a separate report.
+  const submitReport = async () => {
+    setError(null);
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+    const found = await checkHints();
+    const strongMatch = found.find(
+      (item) => item.strong_match && !supportedIds.has(item.reportId),
+    );
+    if (strongMatch) {
+      setSubmitMatch(strongMatch);
+      setSubmitMatchError(null);
+      setIsSubmitting(false);
+      return;
+    }
+    await createReport();
+  };
+
+  const supportFromSubmitDialog = async () => {
+    setSubmitMatchBusy(true);
+    setSubmitMatchError(null);
+    try {
+      await supportReport(submitMatch.reportId, {
+        lat: coordinates.lat,
+        lng: coordinates.lng,
+        via: "submit_dialog",
+        score: submitMatch.score,
+      });
+      markSupported(submitMatch.reportId);
+      setSubmitMatch(null);
+      setShowSupportConfirm(true);
+      resetForm();
+      if (onSubmitted) onSubmitted();
+    } catch (err) {
+      setSubmitMatchError(
+        err.response?.data?.message ||
+          "Could not support this report. Please try again.",
+      );
+    } finally {
+      setSubmitMatchBusy(false);
+    }
+  };
+
+  const submitSeparately = () => {
+    setSubmitMatch(null);
+    createReport();
+  };
+
+  const typeNameOf = (id) => types.find((t) => t.id === id)?.name ?? id;
+
   const requestPhotoDelete = (id) => {
     setConfirmDeleteId(id);
     setShowDeleteDialog(true);
@@ -346,6 +416,13 @@ const ReportForm = ({ onSubmitted }) => {
           )}
         </div>
 
+        <DuplicateHints
+          items={hintItems}
+          typeNameOf={typeNameOf}
+          supportedIds={supportedIds}
+          onSupport={setSupportTarget}
+        />
+
         <div className="rf-field">
           <span className="rf-label">Photos (optional)</span>
           <div id="photoContainer" className="rf-photos">
@@ -395,8 +472,51 @@ const ReportForm = ({ onSubmitted }) => {
           {isSubmitting ? "Submitting..." : "Submit report"}
         </button>
       </div>
+      {supportTarget && (
+        <SupportDialog
+          item={supportTarget}
+          typeName={typeNameOf(supportTarget.type_id)}
+          formPoint={coordinates}
+          onClose={() => setSupportTarget(null)}
+          onSupported={(item) => {
+            markSupported(item.reportId);
+            setSupportTarget(null);
+            setShowSupportConfirm(true);
+            resetForm();
+            if (onSubmitted) onSubmitted();
+          }}
+        />
+      )}
+      {submitMatch && (
+        <SubmitDuplicateDialog
+          item={submitMatch}
+          typeName={typeNameOf(submitMatch.type_id)}
+          busy={submitMatchBusy}
+          error={submitMatchError}
+          onSupport={supportFromSubmitDialog}
+          onSeparate={submitSeparately}
+          onBack={() => setSubmitMatch(null)}
+        />
+      )}
+      {showSupportConfirm && (
+        <ConfirmDialog
+          icon="success"
+          message={[
+            "You now support this report",
+            "You will be notified when its status changes.",
+          ]}
+          buttons={[
+            {
+              label: "Okay",
+              variant: "danger",
+              onClick: () => setShowSupportConfirm(false),
+            },
+          ]}
+        />
+      )}
       {showConfirm && (
         <ConfirmDialog
+          icon="success"
           message={["Report created successfully"]}
           buttons={[
             {
