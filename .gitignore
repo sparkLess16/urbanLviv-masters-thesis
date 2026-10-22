@@ -25,3 +25,5 @@ yarn-error.log*
 # backend
 /backend/node_modules
 /backend/.env
+# generated caches
+/backend/data/cache/
