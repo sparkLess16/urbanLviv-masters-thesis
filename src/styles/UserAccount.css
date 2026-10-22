@@ -61,23 +61,35 @@ p {
 }
 
 .right-side {
-  width: 500px;
+  min-width: 0;
   display: block;
 }
 
+/* Cards inside the list fill the column instead of their own max-widths. */
+.right-side .report-card,
+.right-side .report-images {
+  max-width: none;
+}
+
+/* Same width as .top-info: the two columns line up with the statistics. */
 .container-useraccount {
-  display: flex;
-  width: 100%;
-  justify-content: center;
-  gap: 80px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  width: 1150px;
+  margin: 0 auto;
 }
 
 .left-side {
-  display: block;
+  min-width: 0;
   position: sticky;
   top: 60px;
-  align-self: flex-start;
-  max-height: fit-content;
+}
+
+.left-side .rf-card {
+  width: 100%;
+  max-width: none;
 }
 
 .headline {
@@ -198,14 +210,8 @@ p {
 }
 
 @media (max-width: 1024px) {
-  .right-side {
-    width: 400px;
-  }
   .text-unimport {
     width: 400px;
-  }
-  .container-useraccount {
-    gap: 40px;
   }
 }
 
@@ -220,16 +226,10 @@ p {
     font-size: 12px;
   }
   .container-useraccount {
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-  .right-side {
-    max-width: 600px;
+    grid-template-columns: minmax(0, 1fr);
   }
   .left-side {
-    max-width: 600px;
-    margin: 0 auto;
+    position: static;
   }
   .header-user-email {
     display: none;

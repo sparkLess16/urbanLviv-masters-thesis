@@ -117,24 +117,28 @@
 }
 
 @media (max-width: 1180px) {
-  .top-info {
+  .top-info,
+  .container-useraccount {
     max-width: 820px;
   }
 }
 
 @media (max-width: 1020px) {
-  .top-info {
+  .top-info,
+  .container-useraccount {
     min-width: 600px;
   }
 }
 
 @media (max-width: 820px) {
-  .top-info {
+  .top-info,
+  .container-useraccount {
     width: 400px;
   }
 }
 @media (max-width: 820px) {
-  .top-info {
+  .top-info,
+  .container-useraccount {
     min-width: 400px;
   }
 }
