@@ -12,6 +12,7 @@
     "format:check": "prettier --check .",
     "geocode:legacy": "node scripts/geocodeLegacyReports.js",
     "sync:districts": "node scripts/syncDistrictsWithGeo.js",
+    "fetch:districts": "node scripts/fetchDistrictPolygons.js",
     "index:vector": "node scripts/createVectorIndex.js",
     "backfill:embeddings": "node scripts/backfillEmbeddings.js",
     "search:probe": "node scripts/searchProbe.js",
