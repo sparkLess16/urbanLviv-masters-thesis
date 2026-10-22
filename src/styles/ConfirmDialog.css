@@ -1,72 +1,131 @@
+/* Confirmation dialogs used across the app. Hierarchy: icon, title, muted
+   message, then the buttons (primary black, secondary outlined). */
 .confirm-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  z-index: 2100;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  padding: 16px;
+  overflow-y: auto;
+  background: rgba(63, 63, 63, 0.6);
 }
 
 .confirm-box {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+  padding: 28px 28px 24px;
   background: white;
-  padding: 48px 32px;
-  border-radius: 12px;
+  border-radius: 20px;
   text-align: center;
-  width: 400px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.confirm-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.confirm-icon.is-success {
+  background: #e8f6ec;
+  color: #137333;
+}
+
+.confirm-icon.is-warning {
+  background: #fff8e6;
+  color: #92650a;
 }
 
 .confirm-box p {
-  margin: 0 0 12px 0;
+  margin: 0;
+  text-wrap: balance;
   font-size: 14px;
-  color: #333;
+  line-height: 22px;
+  color: #6b7280;
+}
+
+/* The first line is the title. */
+.confirm-box p:first-of-type {
+  margin-bottom: 6px;
+}
+
+.confirm-box p:first-of-type strong {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  color: #1f2328;
 }
 
 .confirm-buttons {
-  margin-top: 20px;
+  margin-top: 24px;
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
 }
 
-.confirm-buttons .default {
-  border: none;
-  padding: 12px 24px;
-  border-radius: 24px;
-  cursor: pointer;
+.confirm-buttons button {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 30px;
+  font-family: inherit;
   font-size: 14px;
-  background: none;
-  color: black;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.confirm-buttons button:only-child {
+  flex: 0 0 auto;
+  min-width: 160px;
+}
+
+.confirm-buttons .danger,
+.confirm-buttons .primary {
+  background: #000;
+  color: #fff;
+  border: 1px solid #000;
+}
+
+.confirm-buttons .danger:hover,
+.confirm-buttons .primary:hover {
+  background: #2b2b2b;
+  border-color: #2b2b2b;
+}
+
+.confirm-buttons .default {
+  background: #fff;
+  color: #1f2328;
+  border: 1px solid #d4d4d8;
 }
 
 .confirm-buttons .default:hover {
-  background: #f1f1f1;
+  background: #f3f4f6;
 }
 
-.confirm-buttons .danger {
-  background-color: #000000;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 24px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
+.confirm-buttons button:focus-visible {
+  outline: 2px solid #1f2328;
+  outline-offset: 2px;
 }
 
-.confirm-buttons .danger:hover {
-  background: #515151;
+/* Destructive choice: outlined and red, so the safe answer stands out. */
+.confirm-buttons .destructive {
+  background: #fff;
+  color: #b3261e;
+  border: 1px solid #f0c4c0;
 }
 
-.confirm-buttons .primary {
-  background-color: black;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 24px;
-  cursor: pointer;
+.confirm-buttons .destructive:hover {
+  background: #fdf2f1;
+  border-color: #e7a6a1;
 }
