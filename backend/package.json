@@ -14,12 +14,15 @@
     "sync:districts": "node scripts/syncDistrictsWithGeo.js",
     "fetch:districts": "node scripts/fetchDistrictPolygons.js",
     "index:vector": "node scripts/createVectorIndex.js",
+    "index:comments": "node scripts/createCommentIndexes.js",
     "backfill:embeddings": "node scripts/backfillEmbeddings.js",
     "search:probe": "node scripts/searchProbe.js",
+    "suggest:probe": "node scripts/suggestProbe.js",
     "validate:dataset": "node scripts/validateDataset.js",
     "geocode:dataset": "node scripts/geocodeDatasetAddresses.js",
     "seed:dataset": "node scripts/seedDataset.js",
-    "eval:similarity": "node scripts/evalSimilarity.js"
+    "eval:similarity": "node scripts/evalSimilarity.js",
+    "eval:duplicates": "node scripts/evalDuplicates.js"
   },
   "keywords": [],
   "author": "",
