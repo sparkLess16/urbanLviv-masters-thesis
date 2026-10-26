@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Comment from "../models/Comment.js";
 import Notification from "../models/Notification.js";
 import { notifySupporters } from "../services/supportNotificationService.js";
+import { syncClusterStatusSafely } from "../services/clusteringService.js";
 
 const getNotificationText = (status, title) => {
   switch (status) {
@@ -74,6 +75,7 @@ export const updateReportStatus = async (req, res) => {
     const previousStatus = report.status_id;
     report.status_id = status_id;
     await report.save();
+    await syncClusterStatusSafely(report);
 
     await Notification.create({
       user_id: report.created_by,
