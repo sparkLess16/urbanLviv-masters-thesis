@@ -13,15 +13,19 @@
 //   npm run eval:clustering
 //   npm run eval:clustering -- --tau 0.85 --alpha 0.7 --radius 500
 //   npm run eval:clustering -- --sweep        # table over tau and alpha
+import fs from "node:fs";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Report from "../src/models/Report.js";
 import { geoToLatLng } from "../src/utils/geo.js";
+import { pairKey } from "../src/utils/judgePrompt.js";
 import { distanceMeters } from "../src/utils/geoMath.js";
 import {
   CLUSTER_DEFAULTS,
+  combineVerdicts,
   computeCentroid,
   fitsRadius,
+  judgePairsFor,
   pickCluster,
 } from "../src/utils/clusterMath.js";
 import {
@@ -138,14 +142,14 @@ const sd = (values) => {
   return Math.sqrt(mean(values.map((v) => (v - m) ** 2)));
 };
 
-const evaluate = (reports, groupOf, method, params) => {
+const evaluate = (reports, groupOf, method, params, shuffles = SHUFFLES) => {
   const pick = METHODS[method];
   const ordered = clusterAll(reports, pick, params);
   const { predicted, truth } = labelsOf(reports, ordered, groupOf);
 
   const random = seededRandom(42);
   const aris = [];
-  for (let i = 0; i < SHUFFLES; i += 1) {
+  for (let i = 0; i < shuffles; i += 1) {
     const order = shuffled(reports, random);
     const clusters = clusterAll(order, pick, params);
     const labels = labelsOf(reports, clusters, groupOf);
@@ -157,8 +161,8 @@ const evaluate = (reports, groupOf, method, params) => {
     purity: purity(predicted, truth),
     ari: adjustedRandIndex(predicted, truth),
     nmi: normalizedMutualInformation(predicted, truth),
-    ariMean: mean(aris),
-    ariSd: sd(aris),
+    ariMean: aris.length ? mean(aris) : NaN,
+    ariSd: aris.length ? sd(aris) : NaN,
     violations: violations(ordered, params.radiusM),
   };
 };
@@ -182,7 +186,8 @@ const run = async () => {
   const groupOf = new Map(labels.map((l) => [String(l.report_id), l.group_id]));
   const docs = await Report.find({ _id: { $in: [...groupOf.keys()] } })
     .select("+embedding")
-    .sort({ created_dt: 1 });
+    .sort({ created_dt: 1 })
+    .lean();
   const reports = docs
     .filter((doc) => doc.embedding && doc.geo)
     .map((doc) => ({
@@ -211,6 +216,137 @@ const run = async () => {
           ),
         );
       }
+    }
+    return;
+  }
+
+  if (process.argv.includes("--judge")) {
+    // Short trial: when the closest member of a candidate cluster is in the
+    // grey zone, the judge table decides instead of the score threshold.
+    const table = JSON.parse(
+      fs.readFileSync(
+        process.argv[process.argv.indexOf("--judge") + 1],
+        "utf8",
+      ),
+    ).pairs;
+    const low = arg("low", 0.8);
+    const high = arg("high", 0.92);
+    const splitOf = new Map(
+      JSON.parse(
+        fs.readFileSync(
+          new URL("../data/eval/eval_set.json", import.meta.url),
+          "utf8",
+        ),
+      ).groups.map((g) => [g.group_id, g.split]),
+    );
+    const only = process.argv.includes("--only")
+      ? process.argv[process.argv.indexOf("--only") + 1]
+      : "tune";
+    const part = reports.filter((r) => splitOf.get(groupOf.get(r.id)) === only);
+    const datasetOf = new Map(
+      labels.map((l) => [String(l.report_id), l.dataset_id]),
+    );
+    // Same rule as the service: judgePairsFor picks the borderline members,
+    // their answers come from the table instead of Gemini.
+    const k = arg("k", 3);
+    const vote = process.argv.includes("--vote")
+      ? process.argv[process.argv.indexOf("--vote") + 1]
+      : "any";
+    const judge = (member, cluster) => {
+      const verdicts = judgePairsFor(member, cluster, { low, high, k })
+        .map(
+          (other) =>
+            table[pairKey(datasetOf.get(member.id), datasetOf.get(other.id))],
+        )
+        .filter((verdict) => typeof verdict === "boolean");
+      return combineVerdicts(verdicts, vote);
+    };
+    METHODS.judge = (member, clusters, p) =>
+      pickCluster(member, clusters, { ...p, judge });
+
+    const params = {
+      alpha: arg("alpha", CLUSTER_DEFAULTS.alpha),
+      radiusM,
+      tau: arg("tau", CLUSTER_DEFAULTS.tau),
+    };
+    console.log(
+      `${only} groups (${part.length} reports), grey zone ${low}-${high}, alpha ${params.alpha}, tau ${params.tau}\n${HEADER}`,
+    );
+    for (const method of ["ours", "judge", "rule"]) {
+      console.log(row(method, evaluate(part, groupOf, method, params)));
+    }
+    const clusters = clusterAll(part, METHODS.judge, params);
+    for (const cluster of clusters) {
+      const found = new Set(cluster.members.map((m) => groupOf.get(m.id)));
+      if (found.size < 2) continue;
+      console.log(`Still mixed with the judge: ${[...found].join(" + ")}`);
+    }
+    return;
+  }
+
+  if (process.argv.includes("--tune-test")) {
+    // Parameters are chosen on the tune groups only, then reported on test.
+    const splitOf = new Map(
+      JSON.parse(
+        fs.readFileSync(
+          new URL("../data/eval/eval_set.json", import.meta.url),
+          "utf8",
+        ),
+      ).groups.map((g) => [g.group_id, g.split]),
+    );
+    const part = (name) =>
+      reports.filter((r) => splitOf.get(groupOf.get(r.id)) === name);
+    const tune = part("tune");
+    const test = part("test");
+    console.log(`tune: ${tune.length} reports, test: ${test.length} reports
+`);
+
+    const alphas = [0.9, 0.7, 0.5, 0.3];
+    const taus = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95];
+    let best = null;
+    console.log(`Grid on tune groups (radius ${radiusM} m, no shuffles)`);
+    console.log(HEADER);
+    for (const alpha of alphas) {
+      for (const tau of taus) {
+        const params = { alpha, radiusM, tau };
+        const result = evaluate(tune, groupOf, "ours", params, 0);
+        console.log(row(`a=${alpha} t=${tau}`, result));
+        // Best ARI wins; ties go to higher purity, then to the setting
+        // closest to the defaults, so a flat grid does not pick a corner.
+        const distance =
+          Math.abs(alpha - CLUSTER_DEFAULTS.alpha) +
+          Math.abs(tau - CLUSTER_DEFAULTS.tau);
+        const better =
+          !best ||
+          result.ari > best.result.ari + 1e-9 ||
+          (Math.abs(result.ari - best.result.ari) <= 1e-9 &&
+            (result.purity > best.result.purity + 1e-9 ||
+              (Math.abs(result.purity - best.result.purity) <= 1e-9 &&
+                distance < best.distance)));
+        if (better) best = { params, result, distance };
+      }
+    }
+    console.log(
+      `
+Chosen on tune: alpha ${best.params.alpha}, tau ${best.params.tau}
+`,
+    );
+
+    const defaults = { ...CLUSTER_DEFAULTS, radiusM };
+    for (const [name, data] of [
+      ["tune", tune],
+      ["test", test],
+    ]) {
+      console.log(`${name.toUpperCase()} groups
+${HEADER}`);
+      console.log(
+        row("ours (chosen)", evaluate(data, groupOf, "ours", best.params)),
+      );
+      console.log(
+        row("ours (defaults)", evaluate(data, groupOf, "ours", defaults)),
+      );
+      console.log(row("rule", evaluate(data, groupOf, "rule", defaults)));
+      console.log();
     }
     return;
   }

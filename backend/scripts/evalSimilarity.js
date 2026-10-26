@@ -7,6 +7,7 @@
 //   npm run eval:similarity                                  # defaults
 //   npm run eval:similarity -- --strategy geo --alpha 0.5 --radius 300
 //   npm run eval:similarity -- --sweep                       # table: strategies x alpha
+//   npm run eval:similarity -- --sweep --split tune          # queries from tune groups only (or test)
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Report from "../src/models/Report.js";
@@ -15,6 +16,7 @@ import {
   findSimilarReports,
 } from "../src/services/similarityService.js";
 import { geoToLatLng } from "../src/utils/geo.js";
+import { filterBySplit } from "../src/utils/evalSplit.js";
 
 dotenv.config();
 
@@ -65,9 +67,14 @@ const run = async () => {
     .find()
     .toArray();
   const groupOf = new Map(labels.map((l) => [String(l.report_id), l.group_id]));
-  const queries = await Report.find({
-    _id: { $in: [...groupOf.keys()] },
-  }).select("+embedding");
+  const split = arg("split", "all");
+  const queries = filterBySplit(
+    await Report.find({ _id: { $in: [...groupOf.keys()] } }).select(
+      "+embedding",
+    ),
+    groupOf,
+    split,
+  );
   console.log(`${queries.length} labelled report(s), ${K} results each\n`);
 
   if (process.argv.includes("--sweep")) {

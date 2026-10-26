@@ -9,10 +9,12 @@
 //   npm run eval:duplicates
 //   npm run eval:duplicates -- --alpha 0.7 --radius 500 --bonus 0.03
 //   npm run eval:duplicates -- --min-precision 0.95 --min-recall 0.9
+//   npm run eval:duplicates -- --split tune      # or test: only pairs inside that split
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Report from "../src/models/Report.js";
 import { DEFAULTS } from "../src/services/similarityService.js";
+import { filterBySplit } from "../src/utils/evalSplit.js";
 import {
   bestF1,
   buildPairs,
@@ -86,11 +88,13 @@ const run = async () => {
     .find()
     .toArray();
   const groupOf = new Map(labels.map((l) => [String(l.report_id), l.group_id]));
-  const reports = await Report.find({ _id: { $in: [...groupOf.keys()] } })
+  const split = arg("split", "all");
+  const stored = await Report.find({ _id: { $in: [...groupOf.keys()] } })
     .select("+embedding geo type_id")
     .lean();
+  const reports = filterBySplit(stored, groupOf, split);
   console.log(
-    `${reports.length} labelled report(s); alpha ${alpha}, radius ${radiusM} m`,
+    `${reports.length} labelled report(s) (${split}); alpha ${alpha}, radius ${radiusM} m`,
   );
 
   const plain = buildPairs(reports, groupOf, { alpha, radiusM });

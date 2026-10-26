@@ -65,3 +65,20 @@ test("pickCluster refuses a join that pushes a member out of the radius", () => 
   const params = { alpha: 0.7, radiusM: 300, tau: 0.5 };
   assert.equal(pickCluster(member, [cluster], params), null);
 });
+
+test("pickCluster lets a judge verdict replace the tau test", () => {
+  const cluster = clusterAt(0, [1, 0]);
+  const other = { point: at(0), embedding: [0, 1] };
+  assert.equal(pickCluster(other, [cluster]), null);
+  assert.equal(
+    pickCluster(other, [cluster], { judge: () => true })?.cluster,
+    cluster,
+  );
+
+  const same = { point: at(0.0005), embedding: [1, 0] };
+  assert.equal(pickCluster(same, [cluster], { judge: () => false }), null);
+  assert.equal(
+    pickCluster(same, [cluster], { judge: () => null })?.cluster,
+    cluster,
+  );
+});
