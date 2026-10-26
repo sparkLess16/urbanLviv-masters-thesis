@@ -114,6 +114,14 @@ const reportSchema = new mongoose.Schema(
       default: 0,
     },
 
+    // Set by the clustering service; null until the report is clustered.
+    cluster_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ReportCluster",
+      default: null,
+      index: true,
+    },
+
     // Normalized semantic vector. Hidden from queries and JSON output so the
     // 768 numbers never reach API responses; load with .select("+embedding").
     embedding: {

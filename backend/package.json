@@ -22,7 +22,8 @@
     "geocode:dataset": "node scripts/geocodeDatasetAddresses.js",
     "seed:dataset": "node scripts/seedDataset.js",
     "eval:similarity": "node scripts/evalSimilarity.js",
-    "eval:duplicates": "node scripts/evalDuplicates.js"
+    "eval:duplicates": "node scripts/evalDuplicates.js",
+    "backfill:clusters": "node scripts/backfillClusters.js"
   },
   "keywords": [],
   "author": "",

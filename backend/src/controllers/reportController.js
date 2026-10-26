@@ -9,6 +9,10 @@ import { DISTRICTS, getDistrictLabel } from "../utils/districts.js";
 import { getSupportInfo } from "../services/supportService.js";
 import { notifySupporters } from "../services/supportNotificationService.js";
 import { computeTopScore } from "../utils/topScore.js";
+import {
+  clusterReportSafely,
+  syncClusterStatusSafely,
+} from "../services/clusteringService.js";
 
 const NOT_SUPPORT = { $ne: "support" };
 
@@ -80,6 +84,8 @@ export const createReport = async (req, res) => {
       message: "Report created successfully",
       report,
     });
+
+    clusterReportSafely(report._id);
 
     analyzeReportWithAI(report)
       .then(async (aiData) => {
@@ -430,11 +436,14 @@ export const updateReport = async (req, res) => {
     // other fields and the AI analysis stay untouched.
     if (!isOwner) {
       report.modified_by = req.user._id;
+      const geoChanged = report.isModified("geo");
       const savedReport = await report.save();
-      return res.json({
+      res.json({
         message: "Report location updated successfully",
         report: savedReport,
       });
+      if (geoChanged) clusterReportSafely(savedReport._id);
+      return;
     }
 
     const textChanged =
@@ -461,12 +470,20 @@ export const updateReport = async (req, res) => {
 
     report.processing_status_id = "processing";
 
+    // A new type, place or meaning may move the report to another cluster.
+    const needsReclustering =
+      report.isModified("type_id") ||
+      report.isModified("geo") ||
+      report.isModified("embedding");
+
     const updatedReport = await report.save();
 
     res.json({
       message: "Report updated successfully",
       report: updatedReport,
     });
+
+    if (needsReclustering) clusterReportSafely(updatedReport._id);
 
     analyzeReportWithAI(updatedReport)
       .then(async (aiData) => {
@@ -506,6 +523,7 @@ export const cancelReport = async (req, res) => {
     report.modified_by = req.user._id;
 
     await report.save();
+    await syncClusterStatusSafely(report);
     await notifySupporters(report, "cancelled", req.user._id);
 
     res.json({ message: "Report cancelled successfully" });
