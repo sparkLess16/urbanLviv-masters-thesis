@@ -7,7 +7,7 @@ test("uses defaults when nothing is given", () => {
   assert.equal(error, undefined);
   assert.deepEqual(params, {
     strategy: "vector",
-    alpha: 0.7,
+    alpha: 0.8,
     radiusM: 500,
     limit: 5,
   });

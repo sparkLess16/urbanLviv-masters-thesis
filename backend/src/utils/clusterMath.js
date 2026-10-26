@@ -72,17 +72,23 @@ export const fitsRadius = (members, centroidPoint, radiusM) =>
 // member: { point, embedding }; clusters: [{ point, embedding, members }] of the
 // right type. A cluster qualifies when its centroid is within radiusM, the
 // score reaches tau, and the moved centroid keeps all members within radiusM.
+// An optional params.judge(member, cluster) may return true or false for a
+// borderline case; that verdict then replaces the tau test for that cluster.
 // Returns { cluster, members, centroid } for the best qualifying cluster.
 export const pickCluster = (member, clusters, params = CLUSTER_DEFAULTS) => {
-  const { alpha, radiusM, tau } = { ...CLUSTER_DEFAULTS, ...params };
+  const { alpha, radiusM, tau, judge } = { ...CLUSTER_DEFAULTS, ...params };
 
   const ranked = clusters
     .filter((cluster) => distanceMeters(member.point, cluster.point) <= radiusM)
     .map((cluster) => ({
       cluster,
       score: scoreAgainstCluster(member, cluster, { alpha, radiusM }),
+      // true/false when the judge decided this borderline case, else null.
+      verdict: judge ? (judge(member, cluster) ?? null) : null,
     }))
-    .filter((item) => item.score >= tau)
+    .filter((item) =>
+      item.verdict === null ? item.score >= tau : item.verdict,
+    )
     .sort((a, b) => b.score - a.score);
 
   for (const { cluster } of ranked) {
@@ -113,4 +119,32 @@ export const dominantValue = (values) => {
     if (best === null || count > counts.get(best)) best = value;
   }
   return best;
+};
+
+// Members of a candidate cluster that the judge should compare with a new
+// report. Empty when the closest member is outside the grey zone [low, high):
+// then the score decides. Otherwise the k closest members that are in the zone.
+export const judgePairsFor = (member, cluster, { low, high, k }) => {
+  const nearest = cluster.members
+    .filter((other) => other.embedding)
+    .map((other) => ({
+      other,
+      cosine: dotProduct(member.embedding, other.embedding),
+    }))
+    .sort((x, y) => y.cosine - x.cosine);
+
+  if (!nearest.length) return [];
+  if (nearest[0].cosine < low || nearest[0].cosine >= high) return [];
+  return nearest
+    .slice(0, k)
+    .filter((item) => item.cosine >= low && item.cosine < high)
+    .map((item) => item.other);
+};
+
+// One verdict from several judged pairs: "any" needs a single yes,
+// "majority" needs more yes than no. No answers means no opinion (null).
+export const combineVerdicts = (verdicts, vote) => {
+  if (!verdicts.length) return null;
+  const yes = verdicts.filter(Boolean).length;
+  return vote === "any" ? yes > 0 : yes * 2 > verdicts.length;
 };

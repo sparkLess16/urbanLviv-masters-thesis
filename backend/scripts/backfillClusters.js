@@ -6,6 +6,7 @@
 //   npm run backfill:clusters -- --reset            # drop all clusters, rebuild
 //   npm run backfill:clusters -- --experiment       # use the experiment database
 //   npm run backfill:clusters -- --dry-run          # count only, write nothing
+//   npm run backfill:clusters -- --no-judge         # skip Gemini for borderline cases (default: on, one request per such report)
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Report from "../src/models/Report.js";
@@ -15,6 +16,7 @@ import { assignToCluster } from "../src/services/clusteringService.js";
 dotenv.config();
 
 const has = (flag) => process.argv.includes(flag);
+if (has("--no-judge")) process.env.CLUSTER_JUDGE = "off";
 
 const run = async () => {
   const options = has("--experiment")

@@ -3,19 +3,25 @@ import ReportCluster from "../models/ReportCluster.js";
 import { geoToLatLng } from "../utils/geo.js";
 import {
   CLUSTER_DEFAULTS,
+  combineVerdicts,
   computeCentroid,
   deriveClusterStatus,
   dominantValue,
+  judgePairsFor,
   pickCluster,
 } from "../utils/clusterMath.js";
+import { getJudgeSettings } from "../config/clusterJudge.js";
+import { judgeSamePairs } from "./clusterJudgeService.js";
 
 // Cancelled reports never belong to a cluster.
 const toMember = (report) => ({
   id: report._id,
   point: geoToLatLng(report.geo),
-  embedding: report.embedding ?? null,
+  embedding: report.embedding ? Array.from(report.embedding) : null,
   district_id: report.district_id,
   status_id: report.status_id,
+  title: report.title,
+  description: report.description,
 });
 
 const loadMembers = async (ids) => {
@@ -89,6 +95,43 @@ const findCandidates = ({ type_id, point, radiusM }) =>
     .select("+centroid_embedding")
     .limit(20);
 
+// Asks the judge about borderline cases: for each candidate cluster whose
+// closest member is in the grey zone, the new report is compared with its
+// closest members, all in one request. Returns a function for pickCluster, or
+// undefined when there is nothing to ask, the judge is off, or it fails (the
+// score formula then decides, as without the judge).
+const buildJudge = async (member, options, settings = getJudgeSettings()) => {
+  if (!settings.enabled) return undefined;
+
+  const wanted = [];
+  for (const option of options) {
+    for (const other of judgePairsFor(member, option, settings)) {
+      wanted.push({ id: wanted.length + 1, option, other });
+    }
+  }
+  if (!wanted.length) return undefined;
+
+  try {
+    const answers = await judgeSamePairs(
+      wanted.map(({ id, other }) => ({ id, a: member, b: other })),
+      settings,
+    );
+    console.log(
+      `Cluster judge: asked ${wanted.length} pair(s), got ${answers.size} answer(s)`,
+    );
+    const verdicts = new Map();
+    for (const { id, option } of wanted) {
+      if (!answers.has(id)) continue;
+      verdicts.set(option, [...(verdicts.get(option) ?? []), answers.get(id)]);
+    }
+    return (_member, option) =>
+      combineVerdicts(verdicts.get(option) ?? [], settings.vote);
+  } catch (error) {
+    console.error("Cluster judge error:", error.message);
+    return undefined;
+  }
+};
+
 // Puts a report into the best matching cluster or opens a new one. A report is
 // first detached from its old cluster, so the same call also handles a changed
 // type or location. Returns the cluster, or null when the report cannot be
@@ -127,7 +170,8 @@ export const assignToCluster = async (reportId, params = {}) => {
     })),
   );
 
-  const picked = pickCluster(member, options, { alpha, radiusM, tau });
+  const judge = await buildJudge(member, options);
+  const picked = pickCluster(member, options, { alpha, radiusM, tau, judge });
   if (picked) {
     const { cluster } = picked.cluster;
     Object.assign(cluster, buildClusterFields(picked.members));
