@@ -6,8 +6,7 @@ import {
   computeCentroid,
   deriveClusterStatus,
   dominantValue,
-  fitsRadius,
-  scoreAgainstCluster,
+  pickCluster,
 } from "../utils/clusterMath.js";
 
 // Cancelled reports never belong to a cluster.
@@ -44,9 +43,7 @@ export const buildClusterFields = (members) => {
 
 // Rebuilds a cluster from its current members; removes it when none are left.
 export const recomputeCluster = async (clusterId) => {
-  const cluster = await ReportCluster.findById(clusterId).select(
-    "report_ids",
-  );
+  const cluster = await ReportCluster.findById(clusterId).select("report_ids");
   if (!cluster) return null;
 
   const members = (await loadMembers(cluster.report_ids)).filter(
@@ -118,32 +115,22 @@ export const assignToCluster = async (reportId, params = {}) => {
     radiusM,
   });
 
-  const ranked = candidates
-    .map((cluster) => ({
+  const options = await Promise.all(
+    candidates.map(async (cluster) => ({
       cluster,
-      score: scoreAgainstCluster(
-        member,
-        {
-          point: {
-            lat: cluster.centroid.coordinates[1],
-            lng: cluster.centroid.coordinates[0],
-          },
-          embedding: cluster.centroid_embedding,
-        },
-        { alpha, radiusM },
-      ),
-    }))
-    .filter((item) => item.score >= tau)
-    .sort((a, b) => b.score - a.score);
+      point: {
+        lat: cluster.centroid.coordinates[1],
+        lng: cluster.centroid.coordinates[0],
+      },
+      embedding: cluster.centroid_embedding,
+      members: await loadMembers(cluster.report_ids),
+    })),
+  );
 
-  for (const { cluster } of ranked) {
-    const existing = await loadMembers(cluster.report_ids);
-    const members = [...existing, member];
-    const { point } = computeCentroid(members);
-    // Joining must not push an older member out of the radius.
-    if (!fitsRadius(members, point, radiusM)) continue;
-
-    Object.assign(cluster, buildClusterFields(members));
+  const picked = pickCluster(member, options, { alpha, radiusM, tau });
+  if (picked) {
+    const { cluster } = picked.cluster;
+    Object.assign(cluster, buildClusterFields(picked.members));
     await cluster.save();
     await Report.updateOne(
       { _id: report._id },

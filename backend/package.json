@@ -23,7 +23,8 @@
     "seed:dataset": "node scripts/seedDataset.js",
     "eval:similarity": "node scripts/evalSimilarity.js",
     "eval:duplicates": "node scripts/evalDuplicates.js",
-    "backfill:clusters": "node scripts/backfillClusters.js"
+    "backfill:clusters": "node scripts/backfillClusters.js",
+    "eval:clustering": "node scripts/evalClustering.js"
   },
   "keywords": [],
   "author": "",

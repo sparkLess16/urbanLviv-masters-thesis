@@ -67,6 +67,34 @@ export const fitsRadius = (members, centroidPoint, radiusM) =>
       member.point && distanceMeters(member.point, centroidPoint) <= radiusM,
   );
 
+// Chooses the cluster a report should join, or null to open a new one. Shared
+// by the service and the evaluation script so both behave the same.
+// member: { point, embedding }; clusters: [{ point, embedding, members }] of the
+// right type. A cluster qualifies when its centroid is within radiusM, the
+// score reaches tau, and the moved centroid keeps all members within radiusM.
+// Returns { cluster, members, centroid } for the best qualifying cluster.
+export const pickCluster = (member, clusters, params = CLUSTER_DEFAULTS) => {
+  const { alpha, radiusM, tau } = { ...CLUSTER_DEFAULTS, ...params };
+
+  const ranked = clusters
+    .filter((cluster) => distanceMeters(member.point, cluster.point) <= radiusM)
+    .map((cluster) => ({
+      cluster,
+      score: scoreAgainstCluster(member, cluster, { alpha, radiusM }),
+    }))
+    .filter((item) => item.score >= tau)
+    .sort((a, b) => b.score - a.score);
+
+  for (const { cluster } of ranked) {
+    const members = [...cluster.members, member];
+    const centroid = computeCentroid(members);
+    if (fitsRadius(members, centroid.point, radiusM)) {
+      return { cluster, members, centroid };
+    }
+  }
+  return null;
+};
+
 // active while any report is unresolved; resolved when every report is closed
 // and at least one was resolved; closed when all were rejected.
 export const deriveClusterStatus = (statuses) => {
