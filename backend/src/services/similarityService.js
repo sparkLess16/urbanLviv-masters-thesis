@@ -11,8 +11,8 @@ import { geoToLatLng } from "../utils/geo.js";
 
 export const VECTOR_INDEX_NAME = "reports_embedding_index";
 
-// Starting values; tuned on the evaluation set in step EV.
-export const DEFAULTS = { alpha: 0.7, radiusM: 500, limit: 5 };
+// alpha tuned with `npm run eval:alpha -- --split tune` (best on tune, Precision@5 0.991; test 0.978).
+export const DEFAULTS = { alpha: 0.8, radiusM: 500, limit: 5 };
 
 const DEFAULT_EXCLUDED_STATUSES = ["cancelled"];
 const EARTH_RADIUS_M = 6378100;
