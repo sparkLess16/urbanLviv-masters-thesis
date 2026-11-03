@@ -231,9 +231,13 @@ const ClusterMap = ({
     });
 
     if (points.length > 1) {
-      map.fitBounds(L.latLngBounds(points), { ...fitPadding(), maxZoom: 17 });
+      map.flyToBounds(L.latLngBounds(points), {
+        ...fitPadding(),
+        maxZoom: 17,
+        duration: 0.9,
+      });
     } else {
-      map.setView(points[0] ?? toLatLng(detail.centroid), 17);
+      map.flyTo(points[0] ?? toLatLng(detail.centroid), 17, { duration: 0.9 });
     }
     // fitPadding only reads the container width.
     // eslint-disable-next-line react-hooks/exhaustive-deps

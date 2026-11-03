@@ -85,7 +85,8 @@ const ClusterExplorer = () => {
     const request = detailRequest.current + 1;
     detailRequest.current = request;
     setSelectedId(id);
-    setDetail(null);
+    // The previous detail stays on the map until the new one arrives, so the
+    // view flies from one cluster to the next instead of resetting first.
     setDetailError(null);
     fetchCluster(id)
       .then((data) => {
@@ -93,6 +94,7 @@ const ClusterExplorer = () => {
       })
       .catch(() => {
         if (detailRequest.current === request) {
+          setDetail(null);
           setDetailError("Could not load the reports of this cluster");
         }
       });
@@ -199,7 +201,10 @@ const ClusterExplorer = () => {
               {detailError ?? (
                 <>
                   <strong>{reportsLabel(selected.reports_count)}</strong> in “
-                  {detail?.title ?? selected.title ?? "Untitled problem"}”
+                  {(detail?.id === selected.id
+                    ? detail.title
+                    : selected.title) ?? "Untitled problem"}
+                  ”
                 </>
               )}
             </span>
