@@ -16,6 +16,14 @@ const loadFeatures = () => {
   return cachedFeatures;
 };
 
+// District borders for the map: GeoJSON features with the district id only.
+export const getDistrictBorders = () =>
+  loadFeatures().map(({ type, properties, geometry }) => ({
+    type,
+    properties: { district_id: properties.district_id },
+    geometry,
+  }));
+
 // Ray casting on one linear ring of [lng, lat] pairs.
 const isInRing = (lng, lat, ring) => {
   let inside = false;

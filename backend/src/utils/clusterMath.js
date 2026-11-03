@@ -110,6 +110,25 @@ export const deriveClusterStatus = (statuses) => {
   return statuses.includes("resolved") ? "resolved" : "closed";
 };
 
+// The member closest in meaning to the cluster centre; its title names the
+// cluster. Falls back to the first member when there are no vectors.
+export const pickRepresentative = (members, centroidEmbedding) => {
+  if (!members.length) return null;
+  if (!centroidEmbedding) return members[0].id;
+
+  let best = null;
+  let bestScore = -Infinity;
+  for (const member of members) {
+    if (!member.embedding) continue;
+    const score = dotProduct(member.embedding, centroidEmbedding);
+    if (score > bestScore) {
+      best = member;
+      bestScore = score;
+    }
+  }
+  return (best ?? members[0]).id;
+};
+
 // Most frequent value; the first one seen wins a tie.
 export const dominantValue = (values) => {
   const counts = new Map();

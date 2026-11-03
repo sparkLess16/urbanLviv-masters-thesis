@@ -4,7 +4,8 @@ import "leaflet/dist/leaflet.css";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { LVIV_BOUNDS, LVIV_CENTER, isWithinLviv } from "../utils/geo";
+import { LVIV_CENTER, isWithinLviv } from "../utils/geo";
+import { MIN_ZOOM, addOsmTiles, lvivMaxBounds } from "../utils/leafletSetup";
 import { PIN_BLACK, PIN_BLUE, pinIcon } from "../utils/mapPins";
 import "../styles/LocationPicker.css";
 
@@ -72,18 +73,12 @@ const LocationPicker = ({
         ? [value.lat, value.lng]
         : [LVIV_CENTER.lat, LVIV_CENTER.lng],
       zoom: value ? 16 : 12,
-      maxBounds: [
-        [LVIV_BOUNDS.minLat - 0.05, LVIV_BOUNDS.minLng - 0.05],
-        [LVIV_BOUNDS.maxLat + 0.05, LVIV_BOUNDS.maxLng + 0.05],
-      ],
-      minZoom: 11,
+      maxBounds: lvivMaxBounds(),
+      minZoom: MIN_ZOOM,
     });
     mapRef.current = map;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors",
-      maxZoom: 19,
-    }).addTo(map);
+    addOsmTiles(map);
 
     if (value) placeMarker(value.lat, value.lng);
 

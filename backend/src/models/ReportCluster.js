@@ -37,6 +37,13 @@ const reportClusterSchema = new mongoose.Schema(
 
     report_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "Report" }],
 
+    // Member closest to the centre: its title is shown as the cluster name.
+    representative_report_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Report",
+      default: null,
+    },
+
     reports_count: {
       type: Number,
       default: 0,

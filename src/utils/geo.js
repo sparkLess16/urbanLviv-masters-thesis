@@ -14,6 +14,66 @@ export const isWithinLviv = (lat, lng) =>
   lng >= LVIV_BOUNDS.minLng &&
   lng <= LVIV_BOUNDS.maxLng;
 
+// Ray casting on one ring of [lng, lat] pairs.
+const isInRing = (lng, lat, ring) => {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const iAbove = yi > lat;
+    const jAbove = yj > lat;
+    if (iAbove !== jAbove && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+};
+
+const isInPolygon = (lng, lat, [outer, ...holes]) =>
+  isInRing(lng, lat, outer) && !holes.some((hole) => isInRing(lng, lat, hole));
+
+// District id of the GeoJSON feature that contains the point, or null.
+// Same idea as findDistrictId on the backend.
+export const findDistrictAt = ({ lat, lng }, features) =>
+  features.find(({ geometry: { type, coordinates } }) =>
+    type === "Polygon"
+      ? isInPolygon(lng, lat, coordinates)
+      : coordinates.some((polygon) => isInPolygon(lng, lat, polygon)),
+  )?.properties.district_id ?? null;
+
+// Reports at (almost) the same spot would hide each other on the map: spread
+// each such group on a small circle around the spot. Display only; stored
+// coordinates stay as they are. Returns a Map from item to { lat, lng }.
+export const fanOutOverlapping = (items, getPoint, radiusM = 14) => {
+  const groups = new Map();
+  items.forEach((item) => {
+    const { lat, lng } = getPoint(item);
+    const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    groups.set(key, [...(groups.get(key) ?? []), item]);
+  });
+
+  const result = new Map();
+  groups.forEach((group) => {
+    group.forEach((item, index) => {
+      const point = getPoint(item);
+      if (group.length === 1) {
+        result.set(item, point);
+        return;
+      }
+      const angle = (2 * Math.PI * index) / group.length;
+      const metersPerDegree = 111320;
+      result.set(item, {
+        lat: point.lat + (radiusM * Math.sin(angle)) / metersPerDegree,
+        lng:
+          point.lng +
+          (radiusM * Math.cos(angle)) /
+            (metersPerDegree * Math.cos((point.lat * Math.PI) / 180)),
+      });
+    });
+  });
+  return result;
+};
+
 // Haversine distance in meters between two { lat, lng } points.
 export const distanceMeters = (a, b) => {
   const toRad = (deg) => (deg * Math.PI) / 180;

@@ -14,3 +14,5 @@ export const DISTRICTS = [
 
 export const getDistrictLabel = (id) =>
   DISTRICTS.find((district) => district.id === id)?.name ?? id;
+
+export const DISTRICT_IDS = DISTRICTS.map((district) => district.id);

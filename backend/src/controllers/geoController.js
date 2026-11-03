@@ -1,5 +1,5 @@
 import { buildGeoPoint, geoToLatLng } from "../utils/geo.js";
-import { findDistrictId } from "../utils/districtLookup.js";
+import { findDistrictId, getDistrictBorders } from "../utils/districtLookup.js";
 import { geocodingService } from "../services/geocodingService.js";
 
 const MIN_QUERY_LENGTH = 3;
@@ -38,4 +38,9 @@ export const forwardGeocode = async (req, res) => {
     lng: point.lng,
     district_id: districtId,
   });
+};
+
+// GET /api/geo/districts -> GeoJSON FeatureCollection of the district borders.
+export const getDistrictBoundaries = (req, res) => {
+  res.json({ type: "FeatureCollection", features: getDistrictBorders() });
 };
