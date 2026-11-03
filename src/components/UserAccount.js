@@ -6,6 +6,7 @@ import Tabs from "./Tabs";
 import ReportForm from "./ReportForm";
 import TopProblemTypes from "./TopProblemTypes";
 import CityAnalytics from "./CityAnalytics";
+import ClusterExplorer from "./ClusterExplorer";
 
 import axios from "axios";
 
@@ -163,6 +164,7 @@ const UserAccount = () => {
         </p>
         <CityAnalytics refreshKey={shouldRefreshReports} />
         <TopProblemTypes />
+        <ClusterExplorer />
       </div>
 
       <div className="container-useraccount">
