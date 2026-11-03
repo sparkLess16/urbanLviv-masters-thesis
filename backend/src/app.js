@@ -9,6 +9,7 @@ import reactionRoutes from "./routes/reactionRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
+import clusterRoutes from "./routes/clusterRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -21,6 +22,7 @@ app.use("/api/geo", geoRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/reactions", reactionRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/clusters", clusterRoutes);
 
 app.get("/", (req, res) => {
   res.send("UrbanLviv API is running");
