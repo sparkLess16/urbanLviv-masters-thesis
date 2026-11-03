@@ -63,14 +63,14 @@ test("lists clusters with name, district, service and the summary", async () => 
 test("changing the filters asks for the clusters again", async () => {
   setup();
   await screen.findByText("Potholes along the tram line");
-  await userEvent.selectOptions(screen.getByLabelText("Status"), "resolved");
+  await userEvent.click(screen.getByLabelText("Status"));
+  await userEvent.click(screen.getByRole("option", { name: "Resolved" }));
   await waitFor(() =>
     expect(clusterApi.fetchClusters).toHaveBeenLastCalledWith({
       district_id: "all",
       status: "resolved",
     }),
   );
-  expect(screen.getByText("Every report is done")).toBeTruthy();
 });
 
 test("selecting a cluster zooms the map and can be undone", async () => {
@@ -88,7 +88,8 @@ test("selecting a cluster zooms the map and can be undone", async () => {
 test("a failed load shows an error with a retry", async () => {
   setup();
   clusterApi.fetchClusters.mockRejectedValue(new Error("network"));
-  await userEvent.selectOptions(screen.getByLabelText("Status"), "closed");
+  await userEvent.click(screen.getByLabelText("Status"));
+  await userEvent.click(screen.getByRole("option", { name: "Closed" }));
   expect(await screen.findByText(/Could not load clusters/)).toBeTruthy();
   expect(screen.getByText("Try again")).toBeTruthy();
 });

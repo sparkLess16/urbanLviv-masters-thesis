@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ClusterList from "./ClusterList";
 import ClusterMap from "./ClusterMap";
+import Select from "./Select";
 import {
   fetchCluster,
   fetchClusters,
@@ -99,8 +100,17 @@ const ClusterExplorer = () => {
     () => clusters.reduce((sum, cluster) => sum + cluster.reports_count, 0),
     [clusters],
   );
-  const statusHint = STATUS_FILTERS.find((o) => o.value === status)?.hint;
   const selected = clusters.find((cluster) => cluster.id === selectedId);
+  const districtOptions = useMemo(
+    () => [
+      { value: "all", label: "All districts" },
+      ...Object.entries(districtNames).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    ],
+    [districtNames],
+  );
 
   return (
     <section className="cx-card" aria-label="Problem clusters">
@@ -126,35 +136,25 @@ const ClusterExplorer = () => {
             )}
           </div>
           <div className="cx-filters">
-            <label className="cx-field">
-              <span>District</span>
-              <select
+            <div className="cx-field">
+              <label htmlFor="cx-district">District</label>
+              <Select
+                id="cx-district"
                 value={districtId}
-                onChange={(event) => setDistrictId(event.target.value)}
-              >
-                <option value="all">All districts</option>
-                {Object.entries(districtNames).map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="cx-field">
-              <span>Status</span>
-              <select
+                onChange={setDistrictId}
+                options={districtOptions}
+              />
+            </div>
+            <div className="cx-field">
+              <label htmlFor="cx-status">Status</label>
+              <Select
+                id="cx-status"
                 value={status}
-                onChange={(event) => setStatus(event.target.value)}
-              >
-                {STATUS_FILTERS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={setStatus}
+                options={STATUS_FILTERS}
+              />
+            </div>
           </div>
-          <p className="cx-hint">{statusHint}</p>
         </div>
 
         <div className="cx-panel-body">
@@ -189,7 +189,7 @@ const ClusterExplorer = () => {
             {detailError ?? (
               <>
                 <strong>{reportsLabel(selected.reports_count)}</strong> in “
-                {selected.title ?? "Untitled problem"}”
+                {detail?.title ?? selected.title ?? "Untitled problem"}”
               </>
             )}
           </span>

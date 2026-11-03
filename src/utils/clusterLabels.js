@@ -1,13 +1,10 @@
-// What each value of the Status filter means (cluster status in brackets).
+// Open = at least one report is new or in progress; Closed = rejected or
+// cancelled only.
 export const STATUS_FILTERS = [
-  {
-    value: "open",
-    label: "Open",
-    hint: "At least one report is new or in progress",
-  },
-  { value: "resolved", label: "Resolved", hint: "Every report is done" },
-  { value: "closed", label: "Closed", hint: "Rejected or cancelled reports" },
-  { value: "all", label: "All statuses", hint: "Open, resolved and closed" },
+  { value: "open", label: "Open" },
+  { value: "resolved", label: "Resolved" },
+  { value: "closed", label: "Closed" },
+  { value: "all", label: "All statuses" },
 ];
 
 // Cluster status from the API -> the word the user sees.

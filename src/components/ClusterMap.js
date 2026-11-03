@@ -1,17 +1,27 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { LVIV_CENTER, distanceMeters } from "../utils/geo";
+import { LVIV_CENTER, distanceMeters, fanOutOverlapping } from "../utils/geo";
 import { MIN_ZOOM, addOsmTiles, lvivMaxBounds } from "../utils/leafletSetup";
 import { REPORT_STATUS_LABELS, markerSize } from "../utils/clusterLabels";
 import { formatDate } from "../utils/formatDate";
 import "../styles/ClusterExplorer.css";
 
-const BORDER_STYLE = {
-  color: "#5b7f7a",
-  weight: 2,
-  dashArray: "8 6",
+// A white casing under a dark dashed line keeps the border readable on the
+// busy OpenStreetMap tiles without taking over the map.
+const BORDER_CASING = {
+  color: "#fff",
+  weight: 6,
+  opacity: 0.85,
   fillOpacity: 0,
+  interactive: false,
+};
+const BORDER_LINE = {
+  color: "#0b5a52",
+  weight: 2.5,
+  dashArray: "9 7",
+  fillColor: "#0f766e",
+  fillOpacity: 0.05,
   interactive: false,
 };
 
@@ -95,7 +105,10 @@ const ClusterMap = ({
       zoom: 12,
       maxBounds: lvivMaxBounds(),
       minZoom: MIN_ZOOM,
+      zoomControl: false,
     });
+    // On the right: the list covers the left side.
+    L.control.zoom({ position: "topright" }).addTo(map);
     addOsmTiles(map);
     borderLayerRef.current = L.layerGroup().addTo(map);
     clusterLayerRef.current = L.layerGroup().addTo(map);
@@ -112,8 +125,9 @@ const ClusterMap = ({
     const layer = borderLayerRef.current;
     layer.clearLayers();
     if (!borders) return;
+    L.geoJSON(borders, { style: () => BORDER_CASING }).addTo(layer);
     L.geoJSON(borders, {
-      style: () => BORDER_STYLE,
+      style: () => BORDER_LINE,
       onEachFeature: (feature, polygon) => {
         const name = districtNames[feature.properties.district_id];
         if (name && !detail) {
@@ -160,7 +174,8 @@ const ClusterMap = ({
     map.closePopup();
     if (!detail) return;
 
-    const points = detail.reports.map((report) => toLatLng(report.point));
+    const shown = fanOutOverlapping(detail.reports, (report) => report.point);
+    const points = detail.reports.map((report) => toLatLng(shown.get(report)));
     const radius =
       Math.max(
         0,
@@ -178,7 +193,7 @@ const ClusterMap = ({
     }).addTo(layer);
 
     detail.reports.forEach((report) => {
-      L.marker(toLatLng(report.point), {
+      L.marker(toLatLng(shown.get(report)), {
         icon: dotIcon(report.status_id),
         title: report.title,
       })
