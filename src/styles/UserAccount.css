@@ -107,6 +107,7 @@ p {
 .name {
   margin: 0;
   font-size: 32px;
+  font-weight: 600;
 }
 
 .modal {

@@ -240,6 +240,7 @@
 .modal-admin h2 {
   margin: 0;
   margin-bottom: 12px;
+  font-weight: 600;
 }
 
 .modal-admin textarea {
