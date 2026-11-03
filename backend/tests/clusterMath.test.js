@@ -6,6 +6,7 @@ import {
   deriveClusterStatus,
   dominantValue,
   fitsRadius,
+  pickRepresentative,
   scoreAgainstCluster,
 } from "../src/utils/clusterMath.js";
 
@@ -78,4 +79,23 @@ test("dominantValue picks the most frequent, first on a tie", () => {
   assert.equal(dominantValue(["a", "b", "b"]), "b");
   assert.equal(dominantValue(["a", "b"]), "a");
   assert.equal(dominantValue([]), null);
+});
+
+test("representative is the member closest to the centre vector", () => {
+  const members = [
+    { id: "a", embedding: [1, 0] },
+    { id: "b", embedding: [0.8, 0.6] },
+    { id: "c", embedding: [0, 1] },
+  ];
+  assert.equal(pickRepresentative(members, [0.8, 0.6]), "b");
+});
+
+test("representative falls back to the first member without vectors", () => {
+  const members = [
+    { id: "a", embedding: null },
+    { id: "b", embedding: null },
+  ];
+  assert.equal(pickRepresentative(members, null), "a");
+  assert.equal(pickRepresentative(members, [1, 0]), "a");
+  assert.equal(pickRepresentative([], [1, 0]), null);
 });

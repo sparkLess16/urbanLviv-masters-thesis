@@ -9,6 +9,7 @@ import {
   dominantValue,
   judgePairsFor,
   pickCluster,
+  pickRepresentative,
 } from "../utils/clusterMath.js";
 import { resolveResponsibleService } from "../config/responsibleServices.js";
 import { getJudgeSettings } from "../config/clusterJudge.js";
@@ -43,6 +44,7 @@ export const buildClusterFields = (members) => {
     centroid_embedding: embedding ?? undefined,
     district_id: dominantValue(members.map((m) => m.district_id)),
     report_ids: members.map((m) => m.id),
+    representative_report_id: pickRepresentative(members, embedding),
     reports_count: members.length,
     status: deriveClusterStatus(members.map((m) => m.status_id)),
   };
