@@ -10,6 +10,7 @@ import {
   judgePairsFor,
   pickCluster,
 } from "../utils/clusterMath.js";
+import { resolveResponsibleService } from "../config/responsibleServices.js";
 import { getJudgeSettings } from "../config/clusterJudge.js";
 import { judgeSamePairs } from "./clusterJudgeService.js";
 
@@ -47,6 +48,12 @@ export const buildClusterFields = (members) => {
   };
 };
 
+// Service field for a cluster, empty when an admin set it by hand.
+export const serviceFields = (cluster) =>
+  cluster.responsible_service_manual
+    ? {}
+    : { responsible_service: resolveResponsibleService(cluster) };
+
 // Rebuilds a cluster from its current members; removes it when none are left.
 export const recomputeCluster = async (clusterId) => {
   const cluster = await ReportCluster.findById(clusterId).select("report_ids");
@@ -61,6 +68,7 @@ export const recomputeCluster = async (clusterId) => {
   }
 
   Object.assign(cluster, buildClusterFields(members));
+  Object.assign(cluster, serviceFields(cluster));
   await cluster.save();
   return cluster;
 };
@@ -175,6 +183,7 @@ export const assignToCluster = async (reportId, params = {}) => {
   if (picked) {
     const { cluster } = picked.cluster;
     Object.assign(cluster, buildClusterFields(picked.members));
+    Object.assign(cluster, serviceFields(cluster));
     await cluster.save();
     await Report.updateOne(
       { _id: report._id },
@@ -184,9 +193,13 @@ export const assignToCluster = async (reportId, params = {}) => {
     return cluster;
   }
 
-  const created = await ReportCluster.create({
+  const fields = {
     ...buildClusterFields([member]),
     type_id: report.type_id,
+  };
+  const created = await ReportCluster.create({
+    ...fields,
+    responsible_service: resolveResponsibleService(fields),
   });
   await Report.updateOne(
     { _id: report._id },
