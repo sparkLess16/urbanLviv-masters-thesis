@@ -6,12 +6,15 @@ import { toClusterItem, toClusterReport } from "../utils/clusterView.js";
 
 const MAX_CLUSTERS = 200;
 
-// Titles of the representative reports and the number of reports in progress,
-// each in one query for the whole page of clusters.
+// The report that names a cluster: the representative one, or the first member
+// for clusters built before representatives were stored.
+const namingReportId = (cluster) =>
+  cluster.representative_report_id ?? cluster.report_ids[0];
+
+// Titles of the naming reports and the number of reports in progress, each in
+// one query for the whole page of clusters.
 const loadListExtras = async (clusters) => {
-  const representativeIds = clusters
-    .map((cluster) => cluster.representative_report_id)
-    .filter(Boolean);
+  const representativeIds = clusters.map(namingReportId).filter(Boolean);
   const titles = new Map(
     (
       await Report.find({ _id: { $in: representativeIds } }).select("title")
@@ -49,7 +52,7 @@ export const getClusters = async (req, res) => {
     res.json({
       items: clusters.map((cluster) =>
         toClusterItem(cluster, {
-          title: titles.get(String(cluster.representative_report_id)),
+          title: titles.get(String(namingReportId(cluster))),
           inProgressCount: progress.get(String(cluster._id)),
         }),
       ),
@@ -86,9 +89,7 @@ export const getClusterById = async (req, res) => {
 
     res.json({
       ...toClusterItem(cluster, {
-        title:
-          titles.get(String(cluster.representative_report_id)) ??
-          reports[0]?.title,
+        title: titles.get(String(namingReportId(cluster))) ?? reports[0]?.title,
         inProgressCount,
       }),
       reports: reports.map(toClusterReport).filter((item) => item.point),
