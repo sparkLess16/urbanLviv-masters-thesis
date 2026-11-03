@@ -14,6 +14,34 @@ export const isWithinLviv = (lat, lng) =>
   lng >= LVIV_BOUNDS.minLng &&
   lng <= LVIV_BOUNDS.maxLng;
 
+// Ray casting on one ring of [lng, lat] pairs.
+const isInRing = (lng, lat, ring) => {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if (
+      (yi > lat) !== (yj > lat) &&
+      lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi
+    ) {
+      inside = !inside;
+    }
+  }
+  return inside;
+};
+
+const isInPolygon = (lng, lat, [outer, ...holes]) =>
+  isInRing(lng, lat, outer) && !holes.some((hole) => isInRing(lng, lat, hole));
+
+// District id of the GeoJSON feature that contains the point, or null.
+// Same idea as findDistrictId on the backend.
+export const findDistrictAt = ({ lat, lng }, features) =>
+  features.find(({ geometry: { type, coordinates } }) =>
+    type === "Polygon"
+      ? isInPolygon(lng, lat, coordinates)
+      : coordinates.some((polygon) => isInPolygon(lng, lat, polygon)),
+  )?.properties.district_id ?? null;
+
 // Reports at (almost) the same spot would hide each other on the map: spread
 // each such group on a small circle around the spot. Display only; stored
 // coordinates stay as they are. Returns a Map from item to { lat, lng }.

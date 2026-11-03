@@ -1,4 +1,4 @@
-import { distanceMeters, fanOutOverlapping } from "./geo";
+import { distanceMeters, fanOutOverlapping, findDistrictAt } from "./geo";
 
 const at = (lat, lng) => ({ lat, lng });
 
@@ -30,4 +30,47 @@ test("far apart reports are not touched", () => {
   const result = fanOutOverlapping([a, b], (i) => i.point);
   expect(result.get(a)).toEqual(a.point);
   expect(result.get(b)).toEqual(b.point);
+});
+
+const square = (id, x, y) => ({
+  properties: { district_id: id },
+  geometry: {
+    type: "Polygon",
+    coordinates: [
+      [
+        [x, y],
+        [x + 1, y],
+        [x + 1, y + 1],
+        [x, y + 1],
+        [x, y],
+      ],
+    ],
+  },
+});
+
+test("finds the district that contains the point", () => {
+  const features = [square("a", 0, 0), square("b", 2, 0)];
+  expect(findDistrictAt({ lat: 0.5, lng: 2.5 }, features)).toBe("b");
+  expect(findDistrictAt({ lat: 0.5, lng: 1.5 }, features)).toBeNull();
+});
+
+test("a hole in a polygon is not part of the district", () => {
+  const ring = (x, y, size) => [
+    [x, y],
+    [x + size, y],
+    [x + size, y + size],
+    [x, y + size],
+    [x, y],
+  ];
+  const features = [
+    {
+      properties: { district_id: "ring" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [ring(0, 0, 4), ring(1, 1, 2)],
+      },
+    },
+  ];
+  expect(findDistrictAt({ lat: 2, lng: 2 }, features)).toBeNull();
+  expect(findDistrictAt({ lat: 0.5, lng: 0.5 }, features)).toBe("ring");
 });

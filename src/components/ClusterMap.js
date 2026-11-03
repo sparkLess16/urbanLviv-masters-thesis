@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { LVIV_CENTER, distanceMeters, fanOutOverlapping } from "../utils/geo";
+import {
+  LVIV_CENTER,
+  distanceMeters,
+  fanOutOverlapping,
+  findDistrictAt,
+} from "../utils/geo";
 import { MIN_ZOOM, addOsmTiles, lvivMaxBounds } from "../utils/leafletSetup";
 import { REPORT_STATUS_LABELS, markerSize } from "../utils/clusterLabels";
 import { formatDate } from "../utils/formatDate";
@@ -26,6 +31,9 @@ const BORDER_LINE = {
 };
 
 const toLatLng = (point) => [point.lat, point.lng];
+
+// Above this zoom the district labels are replaced by the "current district".
+const LABEL_ZOOM_MAX = 13;
 
 const clusterIcon = (cluster) => {
   const size = markerSize(cluster.reports_count);
@@ -82,14 +90,18 @@ const ClusterMap = ({
   districtNames,
   onSelectCluster,
   onOpenReport,
+  onViewDistrict,
 }) => {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const clusterLayerRef = useRef(null);
   const detailLayerRef = useRef(null);
+  const reportRef = useRef(null);
   const borderLayerRef = useRef(null);
   const callbacksRef = useRef({});
-  callbacksRef.current = { onSelectCluster, onOpenReport };
+  callbacksRef.current = { onSelectCluster, onOpenReport, onViewDistrict };
+  const bordersRef = useRef(borders);
+  bordersRef.current = borders;
 
   const fitPadding = () => {
     const wide = containerRef.current.clientWidth > 900;
@@ -103,7 +115,7 @@ const ClusterMap = ({
     const map = L.map(containerRef.current, {
       center: [LVIV_CENTER.lat, LVIV_CENTER.lng],
       zoom: 12,
-      maxBounds: lvivMaxBounds(),
+      maxBounds: lvivMaxBounds(0.2),
       minZoom: MIN_ZOOM,
       zoomControl: false,
     });
@@ -114,6 +126,19 @@ const ClusterMap = ({
     clusterLayerRef.current = L.layerGroup().addTo(map);
     detailLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
+
+    // Close up the district labels are off screen, so the name of the district
+    // under the map centre is reported instead (shown by the parent).
+    const reportViewDistrict = () => {
+      const features = bordersRef.current?.features;
+      const close = map.getZoom() > LABEL_ZOOM_MAX;
+      const { lat, lng } = map.getCenter();
+      callbacksRef.current.onViewDistrict?.(
+        close && features ? findDistrictAt({ lat, lng }, features) : null,
+      );
+    };
+    map.on("moveend", reportViewDistrict);
+    reportRef.current = reportViewDistrict;
     return () => {
       map.remove();
       mapRef.current = null;
@@ -139,6 +164,7 @@ const ClusterMap = ({
         }
       },
     }).addTo(layer);
+    reportRef.current?.();
   }, [borders, districtNames, detail]);
 
   // One marker per cluster; the selected one is replaced by its reports.

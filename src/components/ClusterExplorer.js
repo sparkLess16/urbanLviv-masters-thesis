@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ClusterList from "./ClusterList";
 import ClusterMap from "./ClusterMap";
+import PinIcon from "./PinIcon";
 import Select from "./Select";
 import {
   fetchCluster,
@@ -35,6 +36,7 @@ const ClusterExplorer = () => {
   const [districtNames, setDistrictNames] = useState({});
   const [typeNames, setTypeNames] = useState({});
   const [borders, setBorders] = useState(null);
+  const [viewDistrict, setViewDistrict] = useState(null);
   const detailRequest = useRef(0);
 
   // Lookups: a failure only costs labels or borders, never the clusters.
@@ -121,6 +123,7 @@ const ClusterExplorer = () => {
         districtNames={districtNames}
         onSelectCluster={selectCluster}
         onOpenReport={(id) => navigate(`/userAccount/${id}`)}
+        onViewDistrict={setViewDistrict}
       />
 
       <div className="cx-panel">
@@ -183,21 +186,29 @@ const ClusterExplorer = () => {
         </div>
       </div>
 
-      {selected && (
-        <div className="cx-banner" role="status">
-          <span>
-            {detailError ?? (
-              <>
-                <strong>{reportsLabel(selected.reports_count)}</strong> in “
-                {detail?.title ?? selected.title ?? "Untitled problem"}”
-              </>
-            )}
-          </span>
-          <button type="button" onClick={clearSelection}>
-            Show all clusters
-          </button>
-        </div>
-      )}
+      <div className="cx-topbar">
+        {viewDistrict && districtNames[viewDistrict] && (
+          <div className="cx-district-chip" aria-live="polite">
+            <PinIcon />
+            {districtNames[viewDistrict]}
+          </div>
+        )}
+        {selected && (
+          <div className="cx-banner" role="status">
+            <span>
+              {detailError ?? (
+                <>
+                  <strong>{reportsLabel(selected.reports_count)}</strong> in “
+                  {detail?.title ?? selected.title ?? "Untitled problem"}”
+                </>
+              )}
+            </span>
+            <button type="button" onClick={clearSelection}>
+              Show all clusters
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="cx-legend" aria-label="Map legend">
         <span>

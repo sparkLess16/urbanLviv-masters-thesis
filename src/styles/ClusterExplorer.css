@@ -113,6 +113,13 @@
   flex: 1;
   overflow-y: auto;
   border-top: 1px solid #eef0f2;
+  /* Scrolls by wheel, touch and keys; the bar itself is hidden. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cx-panel-body::-webkit-scrollbar {
+  display: none;
 }
 
 p.cx-state {
@@ -273,13 +280,41 @@ p.cx-state {
   color: #4b515a;
 }
 
-/* Banner over the map while one cluster is open. */
-.cx-banner {
+/* Row over the map: current district while zoomed in, and the banner while
+   one cluster is open. */
+.cx-topbar {
   position: absolute;
   z-index: 2;
   top: 20px;
   left: 440px;
-  max-width: calc(100% - 520px);
+  right: 84px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.cx-topbar > * {
+  pointer-events: auto;
+}
+
+.cx-district-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 0 16px 0 12px;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0b5a52;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.cx-banner {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -369,6 +404,42 @@ p.cx-state {
   height: 0;
   border-radius: 0;
   border-top: 2.5px dashed #0b5a52;
+}
+
+/* Zoom buttons as in the mockup: separate 44px squares. */
+.cx-map .leaflet-top.leaflet-right .leaflet-control-zoom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 20px 20px 0 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.cx-map .leaflet-bar.leaflet-control-zoom a,
+.cx-map .leaflet-bar.leaflet-control-zoom a:first-child,
+.cx-map .leaflet-bar.leaflet-control-zoom a:last-child {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  font:
+    400 22px/44px "Poppins",
+    system-ui,
+    sans-serif;
+  color: #16181d;
+}
+
+.cx-map .leaflet-bar.leaflet-control-zoom a:hover {
+  background: #f4f5f7;
+}
+
+.cx-map .leaflet-bar.leaflet-control-zoom a.leaflet-disabled {
+  color: #b0b4bb;
+  background: #fff;
 }
 
 /* Leaflet markers */
@@ -487,11 +558,14 @@ p.cx-state {
     box-shadow: none;
   }
 
-  .cx-banner {
+  .cx-topbar {
     top: 12px;
     left: 12px;
-    right: 12px;
-    max-width: none;
+    right: 76px;
+  }
+
+  .cx-map .leaflet-top.leaflet-right .leaflet-control-zoom {
+    margin: 12px 12px 0 0;
   }
 
   .cx-legend {
