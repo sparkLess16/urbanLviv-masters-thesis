@@ -8,6 +8,7 @@ import {
   getAllReports,
   updateReportStatus,
   updateReportPriority,
+  updateClusterService,
 } from "../controllers/adminController.js";
 
 const router = express.Router();
@@ -19,5 +20,7 @@ router.get("/reports", protect, adminOnly, getAllReports);
 router.patch("/reports/:id/status", protect, adminOnly, updateReportStatus);
 
 router.patch("/reports/:id/priority", protect, adminOnly, updateReportPriority);
+
+router.patch("/clusters/:id/service", protect, adminOnly, updateClusterService);
 
 export default router;

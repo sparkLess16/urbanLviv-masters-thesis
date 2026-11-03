@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { FALLBACK_SERVICE } from "../config/responsibleServices.js";
 
 const reportClusterSchema = new mongoose.Schema(
   {
@@ -41,10 +42,17 @@ const reportClusterSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // Filled by the responsible-service step (FR-04).
+    // Set from the type and district (FR-04); an admin can override it.
     responsible_service: {
       type: String,
-      default: null,
+      required: true,
+      default: FALLBACK_SERVICE.name,
+    },
+
+    // True after an admin override: recomputing the cluster keeps the value.
+    responsible_service_manual: {
+      type: Boolean,
+      default: false,
     },
 
     status: {

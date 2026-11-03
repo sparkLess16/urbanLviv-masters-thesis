@@ -2,6 +2,8 @@ import Report from "../models/Report.js";
 import User from "../models/User.js";
 import Comment from "../models/Comment.js";
 import Notification from "../models/Notification.js";
+import ReportCluster from "../models/ReportCluster.js";
+import { resolveResponsibleService } from "../config/responsibleServices.js";
 import { notifySupporters } from "../services/supportNotificationService.js";
 import { syncClusterStatusSafely } from "../services/clusteringService.js";
 
@@ -129,5 +131,38 @@ export const updateReportPriority = async (req, res) => {
     res.status(500).json({
       message: error.message,
     });
+  }
+};
+
+const MAX_SERVICE_LENGTH = 150;
+
+// Body { responsible_service: "text" } sets the service by hand;
+// { responsible_service: null } returns it to the automatic value.
+export const updateClusterService = async (req, res) => {
+  try {
+    const { responsible_service: value } = req.body;
+    const cluster = await ReportCluster.findById(req.params.id);
+    if (!cluster) {
+      return res.status(404).json({ message: "Cluster not found" });
+    }
+
+    if (value === null) {
+      cluster.responsible_service_manual = false;
+      cluster.responsible_service = resolveResponsibleService(cluster);
+    } else {
+      const text = typeof value === "string" ? value.trim() : "";
+      if (!text || text.length > MAX_SERVICE_LENGTH) {
+        return res.status(400).json({
+          message: `responsible_service must be 1-${MAX_SERVICE_LENGTH} characters, or null to reset`,
+        });
+      }
+      cluster.responsible_service_manual = true;
+      cluster.responsible_service = text;
+    }
+
+    await cluster.save();
+    res.json(cluster);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
