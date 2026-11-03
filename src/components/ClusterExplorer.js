@@ -126,6 +126,7 @@ const ClusterExplorer = () => {
         onSelectCluster={selectCluster}
         onOpenReport={(id) => navigate(`/userAccount/${id}`)}
         onViewDistrict={setViewDistrict}
+        focus={selected}
       />
 
       <div className="cx-panel">

@@ -91,12 +91,16 @@ const ClusterMap = ({
   onSelectCluster,
   onOpenReport,
   onViewDistrict,
+  focus,
 }) => {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const clusterLayerRef = useRef(null);
   const detailLayerRef = useRef(null);
   const reportRef = useRef(null);
+  const hadDetailRef = useRef(false);
+  const detailRef = useRef(detail);
+  detailRef.current = detail;
   const borderLayerRef = useRef(null);
   const callbacksRef = useRef({});
   callbacksRef.current = { onSelectCluster, onOpenReport, onViewDistrict };
@@ -183,14 +187,28 @@ const ClusterMap = ({
         .addTo(layer);
     });
 
+    // Back to the whole city: fly if a cluster was open, else just fit.
+    const hadDetail = hadDetailRef.current;
+    hadDetailRef.current = Boolean(detail);
     if (!detail && clusters.length) {
       const bounds = L.latLngBounds(clusters.map((c) => toLatLng(c.centroid)));
-      mapRef.current.fitBounds(bounds, {
-        padding: [60, 60],
-        maxZoom: 15,
-      });
+      const options = { padding: [60, 60], maxZoom: 15 };
+      if (hadDetail) {
+        mapRef.current.flyToBounds(bounds, { ...options, duration: 0.9 });
+      } else {
+        mapRef.current.fitBounds(bounds, options);
+      }
     }
   }, [clusters, detail]);
+
+  // From the whole-city view the flight starts at the click, towards the
+  // cluster centre; the member reports refine it when they arrive.
+  useEffect(() => {
+    if (!focus || detailRef.current) return;
+    mapRef.current.flyTo(toLatLng(focus.centroid), 16, { duration: 0.8 });
+    // Only a new selection should start a flight.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.id]);
 
   // Member reports of the selected cluster, zoomed in on them.
   useEffect(() => {
