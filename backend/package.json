@@ -24,6 +24,7 @@
     "eval:similarity": "node scripts/evalSimilarity.js",
     "eval:duplicates": "node scripts/evalDuplicates.js",
     "backfill:clusters": "node scripts/backfillClusters.js",
+    "backfill:services": "node scripts/backfillResponsibleServices.js",
     "eval:clustering": "node scripts/evalClustering.js",
     "eval:alpha": "node scripts/evalAlpha.js",
     "judge:pairs": "node scripts/judgePairs.js"
