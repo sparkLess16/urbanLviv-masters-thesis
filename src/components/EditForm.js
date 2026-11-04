@@ -8,7 +8,6 @@ const EditForm = ({ onClose, onUpdate }) => {
     name: "",
     surname: "",
     email: "",
-    phone: "",
     password: "",
   });
   const [avatarFile, setAvatarFile] = useState(null);
@@ -25,7 +24,6 @@ const EditForm = ({ onClose, onUpdate }) => {
       name: storedUser.firstName || "",
       surname: storedUser.lastName || "",
       email: storedUser.email || "",
-      phone: storedUser.phoneNumber || "",
       password: "",
     });
 
@@ -59,7 +57,6 @@ const EditForm = ({ onClose, onUpdate }) => {
     form.append("firstName", formData.name);
     form.append("lastName", formData.surname);
     form.append("email", formData.email);
-    form.append("phoneNumber", formData.phone);
 
     if (formData.password.trim()) {
       form.append("password", formData.password);
@@ -109,7 +106,11 @@ const EditForm = ({ onClose, onUpdate }) => {
         <div className="avatar-upload">
           <div className="edit-avatar-preview">
             {avatarPreview ? (
-              <img src={avatarPreview} alt="User avatar preview" />
+              <img
+                src={avatarPreview}
+                alt="User avatar preview"
+                referrerPolicy="no-referrer"
+              />
             ) : (
               <span>👤</span>
             )}
@@ -159,7 +160,6 @@ const EditForm = ({ onClose, onUpdate }) => {
               name="surname"
               value={formData.surname}
               onChange={handleChange}
-              required
             />
           </div>
         </div>
@@ -177,16 +177,6 @@ const EditForm = ({ onClose, onUpdate }) => {
             />
           </div>
 
-          <div className="input-field">
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-          </div>
         </div>
 
         <div className="input-field">

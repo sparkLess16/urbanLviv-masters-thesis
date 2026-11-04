@@ -3,12 +3,24 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import crypto from "crypto";
 import { sendConfirmationEmail } from "../services/emailService.js";
+import { verifyGoogleCredential } from "../services/googleAuthService.js";
+import { decideGoogleSignIn } from "../utils/googleAuthRules.js";
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };
+
+const toAuthUser = (user) => ({
+  id: user._id,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  email: user.email,
+  role: user.role,
+  avatar_url: user.avatar_url,
+  auth_provider: user.auth_provider,
+});
 
 export const verifyAccount = async (req, res) => {
   try {
@@ -47,7 +59,6 @@ export const registerUser = async (req, res) => {
       firstName,
       lastName,
       email,
-      phoneNumber,
       password,
       confirmPassword,
     } = req.body;
@@ -56,7 +67,6 @@ export const registerUser = async (req, res) => {
       !firstName ||
       !lastName ||
       !email ||
-      !phoneNumber ||
       !password ||
       !confirmPassword
     ) {
@@ -80,7 +90,6 @@ export const registerUser = async (req, res) => {
       firstName,
       lastName,
       email,
-      phoneNumber,
       password: hashedPassword,
     });
 
@@ -118,6 +127,13 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    if (!user.password) {
+      return res.status(401).json({
+        message:
+          "This account uses Google sign-in. Please use the Google button.",
+      });
+    }
+
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
     if (!isPasswordCorrect) {
@@ -132,15 +148,74 @@ export const loginUser = async (req, res) => {
 
     res.json({
       token: generateToken(user._id),
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-      },
+      user: toAuthUser(user),
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential || typeof credential !== "string") {
+      return res.status(400).json({ message: "Google credential is missing" });
+    }
+
+    let payload;
+    try {
+      payload = await verifyGoogleCredential(credential);
+    } catch (error) {
+      if (error.message === "Google sign-in is not configured") {
+        return res.status(500).json({ message: error.message });
+      }
+      return res.status(401).json({ message: "Invalid Google token" });
+    }
+
+    const email = payload?.email?.toLowerCase();
+    const [userByGoogleId, userByEmail] = await Promise.all([
+      User.findOne({ google_id: payload?.sub }),
+      email ? User.findOne({ email }) : null,
+    ]);
+
+    const decision = decideGoogleSignIn({
+      payload,
+      userByGoogleId,
+      userByEmail,
+    });
+
+    if (decision.action === "reject") {
+      return res.status(401).json({ message: decision.message });
+    }
+
+    let user = decision.user;
+
+    if (decision.action === "create") {
+      user = await User.create({
+        firstName: payload.given_name || payload.name || email.split("@")[0],
+        lastName: payload.family_name || "",
+        email,
+        auth_provider: "google",
+        google_id: payload.sub,
+        isVerified: true,
+        avatar_url: payload.picture || "",
+      });
+    } else if (decision.action === "link") {
+      user.google_id = payload.sub;
+      user.isVerified = true;
+      user.verificationToken = undefined;
+      if (!user.avatar_url && payload.picture) {
+        user.avatar_url = payload.picture;
+      }
+      if (decision.resetPassword) {
+        user.password = undefined;
+        user.auth_provider = "google";
+      }
+      await user.save();
+    }
+
+    res.json({ token: generateToken(user._id), user: toAuthUser(user) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

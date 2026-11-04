@@ -1,0 +1,11 @@
+.or-divider {
+  text-align: center;
+  color: #777777;
+  font-size: 14px;
+  margin: 16px 0 12px;
+}
+
+.google-login {
+  display: flex;
+  justify-content: center;
+}
