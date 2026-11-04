@@ -6,6 +6,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import "../styles/SignUp.css";
 import myImage from "../assets/img2.jpg";
 import ConfirmDialog from "./ConfirmDialog";
+import GoogleLoginButton from "./GoogleLoginButton";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -18,7 +19,6 @@ const Signup = () => {
     email: Yup.string()
       .email("Invalid email format")
       .required("Email is required"),
-    phone: Yup.string().required("Phone number is required"),
     password: Yup.string()
       .min(8, "Password must be at least 8 characters")
       .matches(/\d/, "Password must contain at least one number")
@@ -32,7 +32,6 @@ const Signup = () => {
     firstName: "",
     lastName: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
   };
@@ -45,7 +44,6 @@ const Signup = () => {
           firstName: values.firstName,
           lastName: values.lastName,
           email: values.email,
-          phoneNumber: values.phone,
           password: values.password,
           confirmPassword: values.confirmPassword,
         },
@@ -138,21 +136,6 @@ const Signup = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="phone">Phone Number:</label>
-                  <Field
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    placeholder="Enter your phone number"
-                  />
-                  <ErrorMessage
-                    name="phone"
-                    component="p"
-                    className="error-message"
-                  />
-                </div>
-
-                <div className="form-group">
                   <label htmlFor="password">Password:</label>
                   <Field
                     type="password"
@@ -198,6 +181,14 @@ const Signup = () => {
             </Form>
           )}
         </Formik>
+        <p className="or-divider">or</p>
+        <GoogleLoginButton
+          onSuccess={() => navigate("/userAccount")}
+          onError={(message) => {
+            setConfirmMessage(["Sign-up failed", message]);
+            setShowConfirm(true);
+          }}
+        />
       </div>
       {showConfirm && (
         <ConfirmDialog
@@ -207,7 +198,9 @@ const Signup = () => {
               label: "Okay",
               onClick: () => {
                 setShowConfirm(false);
-                navigate("/login");
+                if (confirmMessage[0] === "Registration successful!") {
+                  navigate("/login");
+                }
               },
               variant: "primary",
             },

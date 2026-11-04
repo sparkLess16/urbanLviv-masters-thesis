@@ -6,6 +6,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import "../styles/Login.css";
 import myImage from "../assets/login.jpeg";
 import ConfirmDialog from "../components/ConfirmDialog";
+import GoogleLoginButton from "./GoogleLoginButton";
 import { useState } from "react";
 
 const Login = () => {
@@ -123,6 +124,14 @@ const Login = () => {
             </Form>
           )}
         </Formik>
+        <p className="or-divider">or</p>
+        <GoogleLoginButton
+          onSuccess={() => navigate("/userAccount")}
+          onError={(message) => {
+            setConfirmMessage(["Login failed", message]);
+            setShowConfirm(true);
+          }}
+        />
       </div>
       {showConfirm && (
         <ConfirmDialog
