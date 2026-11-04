@@ -165,7 +165,6 @@ const run = async () => {
     firstName: "Dataset",
     lastName: "Seed",
     email: "seed@example.test",
-    phoneNumber: "0000000000",
     password: crypto.randomBytes(32).toString("hex"),
     isVerified: true,
   });
