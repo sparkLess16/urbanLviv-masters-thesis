@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import "../styles/EditForm.css";
 import ConfirmDialog from "./ConfirmDialog";
+import { getUserName } from "../utils/userName";
 import "../styles/UserAccount.css";
 
 const EditForm = ({ onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
     name: "",
-    surname: "",
     email: "",
     password: "",
   });
@@ -21,8 +21,7 @@ const EditForm = ({ onClose, onUpdate }) => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
     setFormData({
-      name: storedUser.firstName || "",
-      surname: storedUser.lastName || "",
+      name: getUserName(storedUser),
       email: storedUser.email || "",
       password: "",
     });
@@ -54,8 +53,7 @@ const EditForm = ({ onClose, onUpdate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const form = new FormData();
-    form.append("firstName", formData.name);
-    form.append("lastName", formData.surname);
+    form.append("name", formData.name);
     form.append("email", formData.email);
 
     if (formData.password.trim()) {
@@ -151,17 +149,6 @@ const EditForm = ({ onClose, onUpdate }) => {
               required
             />
           </div>
-
-          <div className="input-field">
-            <label htmlFor="surname">Surname</label>
-            <input
-              type="text"
-              id="surname"
-              name="surname"
-              value={formData.surname}
-              onChange={handleChange}
-            />
-          </div>
         </div>
 
         <div className="input-group">
@@ -176,7 +163,6 @@ const EditForm = ({ onClose, onUpdate }) => {
               required
             />
           </div>
-
         </div>
 
         <div className="input-field">

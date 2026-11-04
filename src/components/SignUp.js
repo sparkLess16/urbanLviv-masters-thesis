@@ -14,8 +14,7 @@ const Signup = () => {
   const [confirmMessage, setConfirmMessage] = useState([]);
 
   const validationSchema = Yup.object().shape({
-    firstName: Yup.string().required("First Name is required"),
-    lastName: Yup.string().required("Last Name is required"),
+    name: Yup.string().trim().required("Name is required"),
     email: Yup.string()
       .email("Invalid email format")
       .required("Email is required"),
@@ -29,8 +28,7 @@ const Signup = () => {
   });
 
   const initialValues = {
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -41,8 +39,7 @@ const Signup = () => {
       const response = await axios.post(
         "http://localhost:5000/api/auth/register",
         {
-          firstName: values.firstName,
-          lastName: values.lastName,
+          name: values.name.trim(),
           email: values.email,
           password: values.password,
           confirmPassword: values.confirmPassword,
@@ -91,30 +88,15 @@ const Signup = () => {
               )}
               <div className="inputGroup">
                 <div className="form-group">
-                  <label htmlFor="firstName">First Name:</label>
+                  <label htmlFor="name">Name:</label>
                   <Field
                     type="text"
-                    id="firstName"
-                    name="firstName"
-                    placeholder="Enter your first name"
+                    id="name"
+                    name="name"
+                    placeholder="Enter your full name"
                   />
                   <ErrorMessage
-                    name="firstName"
-                    component="p"
-                    className="error-message"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="lastName">Last Name:</label>
-                  <Field
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    placeholder="Enter your last name"
-                  />
-                  <ErrorMessage
-                    name="lastName"
+                    name="name"
                     component="p"
                     className="error-message"
                   />

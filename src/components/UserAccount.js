@@ -1,4 +1,5 @@
 import React from "react";
+import { getUserName } from "../utils/userName";
 import { useState, useEffect, useRef } from "react";
 import myImage from "../assets/useraccount.png";
 import "../styles/UserAccount.css";
@@ -42,10 +43,9 @@ const UserAccount = () => {
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  const firstName = user.firstName || user.data?.firstName || "";
-  const lastName = user.lastName || user.data?.lastName || "";
-
-  const formattedName = `${firstName} ${lastName}`;
+  const fullName = getUserName(user.data || user);
+  const firstName = fullName.split(" ")[0];
+  const formattedName = fullName;
 
   const handleReportSubmitted = async () => {
     setShouldRefreshReports(true);

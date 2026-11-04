@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getUserName } from "../utils/userName";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import "../styles/UserAccount.css";
@@ -200,7 +201,7 @@ const Header = () => {
 
                 <div className="header-user-info">
                   <p className="header-user-name">
-                    {userData.firstName} {userData.lastName}
+                    {getUserName(userData)}
                   </p>
 
                   <p className="header-user-email">{userData.email}</p>
