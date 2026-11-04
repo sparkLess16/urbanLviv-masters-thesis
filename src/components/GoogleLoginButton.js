@@ -27,6 +27,7 @@ const GoogleLoginButton = ({ onSuccess, onError }) => {
           onError={() => onError("Google sign-in failed.")}
           text="continue_with"
           shape="pill"
+          locale="en"
         />
       </div>
     </GoogleOAuthProvider>
