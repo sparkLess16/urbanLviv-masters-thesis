@@ -52,7 +52,7 @@ export const getAllReports = async (req, res) => {
   try {
     const reports = await Report.find()
       .sort({ created_dt: -1 })
-      .populate("created_by", "firstName lastName email");
+      .populate("created_by", "name email");
 
     res.json(reports);
   } catch (error) {

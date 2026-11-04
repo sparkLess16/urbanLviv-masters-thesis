@@ -162,8 +162,7 @@ const run = async () => {
 
   // Technical author: the password is random and unknown, so nobody can log in.
   const author = await User.create({
-    firstName: "Dataset",
-    lastName: "Seed",
+    name: "Dataset Seed",
     email: "seed@example.test",
     password: crypto.randomBytes(32).toString("hex"),
     isVerified: true,

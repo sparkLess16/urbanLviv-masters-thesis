@@ -7,7 +7,7 @@ export const getReportComments = async (req, res) => {
   try {
     const [comments, report] = await Promise.all([
       Comment.find({ report_id: req.params.reportId })
-        .populate("created_by", "firstName lastName role")
+        .populate("created_by", "name role")
         .sort({ created_dt: 1 }),
       Report.findById(req.params.reportId).select("geo").lean(),
     ]);
@@ -31,7 +31,7 @@ export const getReportComments = async (req, res) => {
         created_dt: comment.created_dt,
         created_by_id: user?._id || null,
         created_by: user
-          ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+          ? user.name
           : "Unknown User",
         created_by_role_name: user?.role === "admin" ? "Administrator" : "User",
       };
@@ -57,14 +57,14 @@ export const createComment = async (req, res) => {
       created_by: req.user._id,
     });
 
-    await comment.populate("created_by", "firstName lastName role");
+    await comment.populate("created_by", "name role");
 
     res.status(201).json({
       id: comment._id,
       comment_content: comment.comment_content,
       created_dt: comment.created_dt,
       created_by_id: comment.created_by._id,
-      created_by: `${comment.created_by.firstName} ${comment.created_by.lastName}`,
+      created_by: comment.created_by.name,
       created_by_role_name:
         comment.created_by.role === "admin" ? "Administrator" : "User",
     });
