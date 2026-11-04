@@ -20,7 +20,7 @@ const GoogleLoginButton = ({ onSuccess, onError }) => {
   };
 
   return (
-    <GoogleOAuthProvider clientId={clientId}>
+    <GoogleOAuthProvider clientId={clientId} locale="en">
       <div className="google-login">
         <GoogleLogin
           onSuccess={handleCredential}
