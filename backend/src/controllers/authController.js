@@ -14,8 +14,7 @@ const generateToken = (id) => {
 
 const toAuthUser = (user) => ({
   id: user._id,
-  firstName: user.firstName,
-  lastName: user.lastName,
+  name: user.name,
   email: user.email,
   role: user.role,
   avatar_url: user.avatar_url,
@@ -55,21 +54,9 @@ export const verifyAccount = async (req, res) => {
 
 export const registerUser = async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      confirmPassword,
-    } = req.body;
+    const { name, email, password, confirmPassword } = req.body;
 
-    if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !password ||
-      !confirmPassword
-    ) {
+    if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: "Please fill in all fields" });
     }
 
@@ -87,8 +74,7 @@ export const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const user = await User.create({
-      firstName,
-      lastName,
+      name,
       email,
       password: hashedPassword,
     });
@@ -101,7 +87,7 @@ export const registerUser = async (req, res) => {
 
     const confirmUrl = `http://localhost:3000/verify-account?token=${verificationToken}`;
 
-    await sendConfirmationEmail(user.email, user.firstName, confirmUrl);
+    await sendConfirmationEmail(user.email, user.name, confirmUrl);
 
     res.status(201).json({
       message: "User registered successfully. Please verify your email.",
@@ -193,8 +179,10 @@ export const googleLogin = async (req, res) => {
 
     if (decision.action === "create") {
       user = await User.create({
-        firstName: payload.given_name || payload.name || email.split("@")[0],
-        lastName: payload.family_name || "",
+        name:
+          payload.name ||
+          [payload.given_name, payload.family_name].filter(Boolean).join(" ") ||
+          email.split("@")[0],
         email,
         auth_provider: "google",
         google_id: payload.sub,

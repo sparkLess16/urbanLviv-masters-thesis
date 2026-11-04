@@ -231,7 +231,7 @@ export const getReports = async (req, res) => {
     const topReportIds = await getTopReportIds();
     const reports = await Report.find()
       .sort({ created_dt: -1 })
-      .populate("created_by", "firstName lastName role");
+      .populate("created_by", "name role");
     const supportInfo = await getSupportInfo(
       reports.map((report) => report._id),
       req.user._id,
@@ -249,7 +249,7 @@ export const getReports = async (req, res) => {
           report_id: report._id,
           kind: NOT_SUPPORT,
         })
-          .populate("created_by", "firstName lastName role")
+          .populate("created_by", "name role")
           .sort({ created_dt: 1 });
 
         return {
@@ -297,7 +297,7 @@ export const getReports = async (req, res) => {
             created_dt: comment.created_dt,
             created_by_id: comment.created_by?._id,
             created_by: comment.created_by
-              ? `${comment.created_by.firstName} ${comment.created_by.lastName}`
+              ? comment.created_by.name
               : "Unknown User",
             created_by_role_name:
               comment.created_by?.role === "admin" ? "Administrator" : "User",
@@ -314,7 +314,7 @@ export const getReportById = async (req, res) => {
   try {
     const report = await Report.findById(req.params.id).populate(
       "created_by",
-      "firstName lastName role",
+      "name role",
     );
 
     if (!report) {
@@ -576,7 +576,7 @@ export const getTopReports = async (req, res) => {
         $nin: ["resolved", "cancelled"],
       },
     })
-      .populate("created_by", "firstName lastName role")
+      .populate("created_by", "name role")
       .sort({ created_dt: -1 });
 
     const supportInfo = await getSupportInfo(

@@ -17,9 +17,8 @@ const uploadToCloudinary = (fileBuffer) => {
 export const updateCurrentUser = async (req, res) => {
   try {
     const user = req.user;
-    const { firstName, lastName, email, password, removeAvatar } = req.body;
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
+    const { name, email, password, removeAvatar } = req.body;
+    if (name) user.name = name;
     if (email) user.email = email;
     if (password && password.trim() !== "") {
       const salt = await bcrypt.genSalt(10);
@@ -38,8 +37,7 @@ export const updateCurrentUser = async (req, res) => {
 
     res.json({
       id: updatedUser._id,
-      firstName: updatedUser.firstName,
-      lastName: updatedUser.lastName,
+      name: updatedUser.name,
       email: updatedUser.email,
       role: updatedUser.role,
       avatar_url: updatedUser.avatar_url,
