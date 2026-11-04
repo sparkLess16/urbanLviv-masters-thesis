@@ -106,7 +106,11 @@ const EditForm = ({ onClose, onUpdate }) => {
         <div className="avatar-upload">
           <div className="edit-avatar-preview">
             {avatarPreview ? (
-              <img src={avatarPreview} alt="User avatar preview" />
+              <img
+                src={avatarPreview}
+                alt="User avatar preview"
+                referrerPolicy="no-referrer"
+              />
             ) : (
               <span>👤</span>
             )}

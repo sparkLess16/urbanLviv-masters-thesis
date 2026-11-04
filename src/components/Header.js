@@ -174,7 +174,11 @@ const Header = () => {
               <div className="header-user-block">
                 <div className="mock-avatar">
                   {userData.avatar_url ? (
-                    <img src={userData.avatar_url} alt="User avatar" />
+                    <img
+                      src={userData.avatar_url}
+                      alt="User avatar"
+                      referrerPolicy="no-referrer"
+                    />
                   ) : (
                     <svg
                       width="24"
