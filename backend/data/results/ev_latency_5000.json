@@ -1,0 +1,22 @@
+{
+  "database": "urbanlviv_experiments_load",
+  "reports": 5000,
+  "related": {
+    "vector": {
+      "calls": 120,
+      "p50_ms": 199.9,
+      "p95_ms": 209.6,
+      "max_ms": 274.5,
+      "mean_ms": 202.4,
+      "calls_with_results": 120
+    },
+    "geo": {
+      "calls": 120,
+      "p50_ms": 379.8,
+      "p95_ms": 447.1,
+      "max_ms": 507.3,
+      "mean_ms": 363.5,
+      "calls_with_results": 120
+    }
+  }
+}

@@ -2,7 +2,7 @@ const METERS_PER_DEGREE_LAT = 111320;
 
 // 32-bit string hash and a small seeded PRNG: the same seed always gives the
 // same offset, so reloading the dataset reproduces identical coordinates.
-const hashString = (text) => {
+export const hashString = (text) => {
   let hash = 2166136261;
   for (const char of text) {
     hash ^= char.charCodeAt(0);
@@ -11,7 +11,7 @@ const hashString = (text) => {
   return hash >>> 0;
 };
 
-const mulberry32 = (seed) => () => {
+export const mulberry32 = (seed) => () => {
   seed = (seed + 0x6d2b79f5) >>> 0;
   let t = seed;
   t = Math.imul(t ^ (t >>> 15), t | 1);
