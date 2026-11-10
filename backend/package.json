@@ -22,6 +22,7 @@
     "geocode:dataset": "node scripts/geocodeDatasetAddresses.js",
     "seed:dataset": "node scripts/seedDataset.js",
     "seed:load": "node scripts/seedLoadDataset.js",
+    "measure:latency": "node scripts/measureLatency.js",
     "eval:similarity": "node scripts/evalSimilarity.js",
     "eval:duplicates": "node scripts/evalDuplicates.js",
     "backfill:clusters": "node scripts/backfillClusters.js",
